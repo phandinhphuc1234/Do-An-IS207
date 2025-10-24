@@ -1,0 +1,223 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
+use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
+use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
+use App\Models\User; // Adjust to your User model namespace
+use Illuminate\Support\Facades\DB;
+use App\Models\RefreshToken;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\VerifyCode;
+
+class AuthController extends Controller
+{
+    /**
+     * Register a new user.
+     */
+    public function post_register(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'full_name' => 'required|string|max:100',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation errors',
+                'data' => $validator->errors()
+            ], 422);
+        }
+
+        $user = User::create([
+            'full_name' => $request->input('full_name'),
+            'email' => $request->input('email'),
+            'password_hash' => Hash::make($request->input('password')),
+            'verification_code' => (string)random_int(100000, 999999),
+        ]);
+
+        DB::insert("
+        INSERT INTO user_roles (user_id, role_id)
+        VALUES (:user_id, :role_id)", [
+            'user_id' => $user->user_id,
+            'role_id' => 'member'
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User registered successfully',
+            'email' => $user->email,
+        ], 201);
+    }
+    public function get_register(Request $request)
+    {
+        return response()->json([
+            'success' => false,
+            'message' => 'Unauthorized',
+        ], 401);
+    }
+    public function sendCode(Request $request)
+    {
+        if (!$request->has('email')) {
+            return response()->json([
+                'sent' => false,
+                'message' => 'Email is required.'
+            ], 422);
+        }
+        $user = User::where('email', $request->email)->first();
+        if ($user == null) {
+            return response()->json([
+                'sent' => false,
+                'message' => 'The email not found'
+            ], 404);
+        }
+        if ($user->email_verified == true) {
+            return response()->json([
+                'sent' => false,
+                'message' => 'This email has verified'
+            ], 200);
+        }
+        Mail::to($user->email)->send(new VerifyCode($user->verification_code));
+
+        return response()->json([
+            'sent' => true,
+            'message' => 'Verification code sent to your email.'
+        ]);
+    }
+    public function verifyCode(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'code' => 'required|string|size:6',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'verified' => false,
+                'message' => 'Validation errors',
+                'data' => $validator->errors()
+            ], 422);
+        }
+
+        $user = User::where('email', $request->email)->first();
+        if ($user == null) {
+            return response()->json([
+                'verified' => false,
+                'message' => 'The email not found'
+            ], 404);
+        }
+        if ($user->verification_code !== $request->code) {
+            return response()->json([
+                'verified' => false,
+                'message' => 'Invalid verification code'
+            ], 400);
+        }
+
+        $user->email_verified = true;
+        $user->verification_code = (string)random_int(100000, 999999);
+        $user->save();
+
+        return response()->json([
+            'verified' => true,
+            'message' => 'Email verified successfully.'
+        ]);
+    }
+    /**
+     * Authenticate a user and return a token.
+     */
+    public function get_login(Request $request)
+    {
+        return response()->json([
+            'success' => false,
+            'message' => 'Unauthorized'
+        ], 401);
+    }
+    public function post_login(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|max:255',
+            'password' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Wrong email or password',
+                'data' => $validator->errors()
+            ], 422);
+        }
+
+        // Get the credentials from the request
+        $credentials = $request->only('email', 'password');
+
+        // Try to find the user by email
+        $user = User::where('email', $credentials['email'])->first();
+
+        if (!$user || !Hash::check($credentials['password'], $user->password_hash)) {
+            // Password doesn't match or user doesn't exist
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid credentials'
+            ], 401);
+        }
+
+        // If credentials are correct, generate a token
+        try {
+            if (!$token = JWTAuth::fromUser($user)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Could not create token'
+                ], 500);
+            }
+        } catch (JWTException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Could not create token'
+            ], 500);
+        }
+        $refreshToken = null;
+        if ($user->refreshTokens()->first() == null) {
+            $refreshToken = $this->generateRefreshToken($user);
+        } else if ($user->refreshTokens()->first()->expires_at <= now()) {
+            $user->refreshTokens()->delete();
+            $refreshToken = $this->generateRefreshToken($user);
+        } else {
+            $refreshToken = $user->refreshTokens()->first()->token;
+        }
+        // Return the success response with the token and user data
+        return response()->json([
+            'success' => true,
+            'access_token' => $token,
+            'refresh_token' => $refreshToken,
+        ]);
+    }
+
+    protected function generateRefreshToken(User $user)
+    {
+        // Generate 12 bytes of random data (96 bits)
+        $randomBytes = random_bytes(12);
+
+        // Convert to Base64, remove padding, make URL-safe, and truncate to 16 characters
+        $refreshToken = substr(
+            str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($randomBytes)),
+            0,
+            16
+        );
+        // Store unhashed token in the database
+        $user->refreshTokens()->create([
+            'token' => $refreshToken, // 16-character Base64URL
+            'expires_at' => now()->addDay(7),
+            'revoked' => false,
+            'user_id' => $user->user_id,
+        ]);
+
+        // Return the token to the client
+        return $refreshToken;
+    }
+}
