@@ -129,7 +129,8 @@ const App = () => {
                         <Link to="/login">
                             <button 
                                 onClick={handleSignIn}
-                                className="bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700 h-11 w-64 rounded-full transition-all duration-200 font-medium text-sm flex items-center justify-center cursor-pointer border-none outline-none"
+                                className="h-11 w-64 rounded-full transition-all duration-200 font-medium text-sm flex items-center justify-center cursor-pointer border-none outline-none"
+                                style={{ backgroundColor: '#3b82f6', color: 'white' }}
                             >
                                 Sign In
                             </button>
@@ -140,7 +141,7 @@ const App = () => {
                 
                 {/* Supported Payment Types & FAQ Section */}
                 <div className="w-full mt-auto bg-white">
-                    <div className="max-w-7xl mx-auto px-4 md:px-8 lg:px-16">
+                    <div className="max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-16">
                         {/* Payment Types */}
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 py-6">
                             <span className="text-sm text-gray-600 whitespace-nowrap mr-2">

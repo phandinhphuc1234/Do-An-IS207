@@ -577,15 +577,16 @@ useEffect(() => {
             </div>
 
             {/* Icons */}
-            <Link to={"/cart"}>
-              <ShoppingCart className={`w-5 h-5 cursor-pointer ${iconColor} hover:opacity-70`} />
-            </Link>
-            {/* KHỐI USER ICON VÀ POPUP */}
-            <div 
-               className="relative flex items-center h-full p-4 -mr-4"
+            <div className="flex items-center gap-2">
+              <Link to={"/cart"}>
+                <ShoppingCart className={`w-5 h-5 cursor-pointer ${iconColor} hover:opacity-70`} />
+              </Link>
+              {/* KHỐI USER ICON VÀ POPUP */}
+              <div 
+                className="relative flex items-center h-full p-2"
                 onMouseEnter={handleUserBlockMouseEnter}
                 onMouseLeave={handleUserBlockMouseLeave}
-            >
+              >
                   <User 
                       className={`w-5 h-5 cursor-pointer ${iconColor} hover:opacity-70`}
                   />    
@@ -604,6 +605,7 @@ useEffect(() => {
                     />
                 )}
 
+              </div>
             </div>
           </div>
         </div>

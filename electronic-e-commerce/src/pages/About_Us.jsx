@@ -147,7 +147,10 @@ function AboutUs() {
           <h2 className="text-white text-3xl md:text-4xl lg:text-5xl font-bold mt-3 leading-tight italic">
             Brilliant innovation you never expected
           </h2>
-          <button className="mt-8 px-6 py-3 bg-white text-black text-sm font-medium rounded-full hover:bg-gray-100 transition-colors">
+          <button 
+            className="mt-8 px-6 py-3 text-sm font-medium rounded-full hover:opacity-90 transition-opacity"
+            style={{ backgroundColor: 'white', color: 'black' }}
+          >
             Learn more
           </button>
         </div>
@@ -174,7 +177,10 @@ function AboutUs() {
               <h2 className="text-white text-2xl md:text-3xl font-bold mt-2 leading-tight">
                 We strive to maximize value and convenience for our customers
               </h2>
-              <button className="mt-6 px-6 py-2.5 border border-white text-white text-sm font-medium rounded-full hover:bg-white hover:text-black transition-colors">
+              <button 
+                className="mt-6 px-6 py-2.5 border text-sm font-medium rounded-full hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: 'transparent', color: 'white', borderColor: 'white' }}
+              >
                 Learn more
               </button>
             </div>
@@ -203,7 +209,10 @@ function AboutUs() {
               <h2 className="text-black text-2xl md:text-3xl font-bold mt-2 leading-tight">
                 Developing next-generation products for a better tomorrow
               </h2>
-              <button className="mt-6 px-6 py-2.5 bg-black text-white text-sm font-medium rounded-full hover:bg-gray-800 transition-colors">
+              <button 
+                className="mt-6 px-6 py-2.5 text-sm font-medium rounded-full hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: 'black', color: 'white' }}
+              >
                 Learn more
               </button>
             </div>
