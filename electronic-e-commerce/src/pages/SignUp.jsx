@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
+
+const API_BASE_URL = import.meta.env.VITE_BACKEND_API_URL;
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -159,6 +161,8 @@ const SignUp = () => {
     }
   };
 
+  const [isLoading, setIsLoading] = useState(false);
+
   // ============================================================ Gui submit form den backend ================================================================
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -191,23 +195,48 @@ const SignUp = () => {
       return;
     }
     
+    setIsLoading(true);
+    setMessage("");
+
     try {
-      // Make API call
-      const response = await axios.post('YOUR_API_ENDPOINT', {
+      // Gọi API POST /register theo đúng format backend
+      const response = await axios.post(`${API_BASE_URL}/register`, {
+        full_name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
         password: formData.password,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        dateOfBirth: `${formData.year}-${formData.month}-${formData.day}`,
-        zipCode: formData.zipCode
+        password_confirmation: formData.confirmPassword,
       });
-      
-      setMessage("Account created successfully!");
-      // Navigate to next page or login
-      // navigate('/login');
+
+      if (response.data.success) {
+        setMessage(
+          "Account created successfully! Please check your email to verify."
+        );
+
+        // Chuyển đến trang xác nhận email với email đã đăng ký
+        setTimeout(() => {
+          navigate("/verified_email", { state: { email: formData.email } });
+        }, 1500);
+      }
     } catch (error) {
-      setMessage("Error creating account. Please try again.");
+      if (error.response?.data?.message) {
+        setMessage(error.response.data.message);
+      } else if (error.response?.data?.data) {
+        // Xử lý validation errors từ Laravel
+        const serverErrors = error.response.data.data;
+        const mappedErrors = {};
+        if (serverErrors.email) mappedErrors.email = serverErrors.email[0];
+        if (serverErrors.password)
+          mappedErrors.password = serverErrors.password[0];
+        if (serverErrors.full_name)
+          mappedErrors.firstName = serverErrors.full_name[0];
+        setErrors(mappedErrors);
+        setMessage("Please fix the errors before submitting");
+      } else {
+        setMessage("Error creating account. Please try again.");
+      }
       console.error(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 // ============================================================ Gui submit form den backend ================================================================
@@ -438,15 +467,24 @@ const SignUp = () => {
               <button
                 type="button"
                 onClick={() => navigate(-1)}
-                className="w-40 h-12 py-3 border-b rounded-md border border-gray-300 bg-gray-200 text-gray-700 hover:bg-gray-300 transition"
+                disabled={isLoading}
+                className="w-40 h-12 py-3 border-b rounded-md border border-gray-300 bg-gray-200 text-gray-700 hover:bg-gray-300 transition disabled:opacity-50"
               >
                 Back
               </button>
               <button
                 type="submit"
-                className="w-40 h-12 py-3 border-b rounded-md bg-blue-500 text-white hover:bg-blue-600 transition"
+                disabled={isLoading}
+                className="w-40 h-12 py-3 border-b rounded-md bg-blue-500 text-white hover:bg-blue-600 transition disabled:opacity-50 flex items-center justify-center"
               >
-                <p className='text-black'>Next</p>
+                {isLoading ? (
+                  <svg className="animate-spin h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <p className='text-black'>Next</p>
+                )}
               </button>
             </div>
           </form>

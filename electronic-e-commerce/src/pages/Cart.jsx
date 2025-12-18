@@ -52,46 +52,48 @@ const FAQSection = () => {
     };
 
     return (
-        <div className="w-full py-4">
-            <div className="w-full">
-                {/* Collapsible Header */}
-                <button 
-                    onClick={() => setIsOpen(!isOpen)}
-                    className="w-full flex items-center justify-between py-4 border-b border-gray-200"
-                >
-                    <h2 className="text-xl font-bold text-black">
-                        Frequently Asked Questions
-                    </h2>
-                    <ChevronRight 
-                        className={`w-6 h-6 text-gray-700 transition-transform duration-300 ${isOpen ? 'rotate-90' : '-rotate-90'}`} 
-                    />
-                </button>
+        <div className="w-full py-4" style={{ backgroundColor: 'white' }}>
+            {/* Collapsible Header */}
+            <button 
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex items-center justify-between py-4 border-b border-gray-200"
+                style={{ backgroundColor: 'white', border: 'none', borderBottom: '1px solid #e5e7eb' }}
+            >
+                <h2 className="text-xl font-bold text-black">
+                    Frequently Asked Questions
+                </h2>
+                <ChevronRight 
+                    className={`w-6 h-6 text-gray-700 transition-transform duration-300 ${isOpen ? 'rotate-90' : '-rotate-90'}`} 
+                />
+            </button>
 
-                {/* FAQ List - Collapsible */}
-                {isOpen && (
-                    <div className="mt-4">
-                        {faqs.map((faq, index) => (
-                            <div 
-                                key={index}
-                                className="border-b border-gray-200"
+            {/* FAQ List - Collapsible */}
+            {isOpen && (
+                <div style={{ backgroundColor: 'white' }}>
+                    {faqs.map((faq, index) => (
+                        <div 
+                            key={index}
+                            style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb' }}
+                        >
+                            <button
+                                onClick={() => toggleFAQ(index)}
+                                className="w-full flex items-center justify-between py-5 text-left"
+                                style={{ backgroundColor: 'white', border: 'none' }}
                             >
-                                <button
-                                    onClick={() => toggleFAQ(index)}
-                                    className="w-full flex items-center justify-between py-5 text-left hover:bg-gray-50 transition-colors"
-                                >
-                                    <span className="text-sm text-gray-800">{faq.question}</span>
-                                    <Plus className={`w-4 h-4 text-gray-500 flex-shrink-0 transition-transform duration-200 ${openIndex === index ? 'rotate-45' : ''}`} />
-                                </button>
-                                {openIndex === index && (
-                                    <div className="pb-5 text-sm text-gray-600 pr-8">
-                                        {faq.answer}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+                                <span className="text-sm text-gray-800">{faq.question}</span>
+                                <span className="text-gray-500 flex-shrink-0 text-xl font-light">
+                                    {openIndex === index ? '−' : '+'}
+                                </span>
+                            </button>
+                            {openIndex === index && (
+                                <div className="pb-5 text-sm text-gray-600 pr-8" style={{ backgroundColor: 'white' }}>
+                                    {faq.answer}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };

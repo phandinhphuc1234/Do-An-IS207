@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { Search, ShoppingCart, User, ChevronRight, LogOut } from "lucide-react";
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useRef } from "react";
+import { Search, ShoppingCart, User, ChevronRight } from "lucide-react";
+import { Link } from "react-router-dom";
 // Đảm bảo đường dẫn import đúng với cấu trúc dự án của bạn
 // import Cart from "../pages/Cart"; 
 
@@ -189,10 +189,9 @@ const ACCOUNT_MENU = [
 // COMPONENT MỚI: UserAccountPopupBefore (CHƯA ĐĂNG NHẬP)
 // ============================================
 
-function UserAccountPopupBefore({ isVisible })
-{
+function UserAccountPopupBefore({ isVisible, onMouseEnter, onMouseLeave }) {
   if (!isVisible) return null;
-  
+
   const menuItems = [
     { name: "Sign in/Create Account", path: "/login" },
     { name: "Track your orders", path: "/track-orders" },
@@ -200,12 +199,14 @@ function UserAccountPopupBefore({ isVisible })
   ];
 
   return (
-    <div 
+    <div
       className="absolute top-12 right-0 w-64 bg-white shadow-2xl rounded-xl p-4 transform origin-top-right transition-all duration-300 ease-out z-50"
       style={{
         opacity: isVisible ? 1 : 0,
-        transform: isVisible ? 'scale(1)' : 'scale(0.95)',
+        transform: isVisible ? "scale(1)" : "scale(0.95)",
       }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       <ul className="space-y-3 text-gray-700">
         {menuItems.map((item, index) => (
@@ -244,18 +245,26 @@ function UserAccountPopupBefore({ isVisible })
 // COMPONENT: UserAccountPopup (ĐÃ ĐĂNG NHẬP) - ĐÃ SỬA GIAO DIỆN THEO ẢNH
 // ============================================
 
-function UserAccountPopup({ isVisible, userName, menuItems, handleLogout}) { 
+function UserAccountPopup({
+  isVisible,
+  userName,
+  menuItems,
+  handleLogout,
+  onMouseEnter,
+  onMouseLeave,
+}) {
   if (!isVisible) return null;
-  
+
   return (
-    <div 
+    <div
       className="absolute top-12 right-0 w-[280px] bg-white shadow-2xl rounded-2xl p-6 transform origin-top-right transition-all duration-300 ease-out z-50 font-sans"
       style={{
         opacity: isVisible ? 1 : 0,
-        transform: isVisible ? 'scale(1)' : 'scale(0.95)',
+        transform: isVisible ? "scale(1)" : "scale(0.95)",
       }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
-      
       {/* 1. Phần Header/Profile - Sửa thành hàng ngang */}
       <div className="flex items-center gap-3 mb-4">
         <div className="p-2 bg-gray-100 rounded-full">
@@ -276,15 +285,19 @@ function UserAccountPopup({ isVisible, userName, menuItems, handleLogout}) {
 
       {/* 3. Danh sách Menu */}
       <ul className="space-y-3">
-        {menuItems.map((item, index) => (
-          <li key={index}>
-            <Link 
-              to={`/${item.toLowerCase().replace(/\s+/g, '-')}`}
-            >
-               <p className="text-black hover:underline font-normal block py-1 transition-colors">{item}</p>
-            </Link>
-          </li>
-        ))}
+        {menuItems.map((item, index) => {
+          // Map "Samsung Account" to /profile
+          const path = item === "Samsung Account" 
+            ? "/profile" 
+            : `/${item.toLowerCase().replace(/\s+/g, '-')}`;
+          return (
+            <li key={index}>
+              <Link to={path}>
+                <p className="text-black hover:underline font-normal block py-1 transition-colors">{item}</p>
+              </Link>
+            </li>
+          );
+        })}
         
         {/* 4. Log Out - Dạng text bình thường nằm cuối */}
         <li>
@@ -484,24 +497,50 @@ useEffect(() => {
     }
   }
 
-  // Logic MỚI: Xử lý User Popup
+  // Logic MỚI: Xử lý User Popup với useRef để cancel timeout
+  const popupTimeoutRef = useRef(null);
+
   const handleUserBlockMouseEnter = () => {
+    // Cancel timeout nếu có
+    if (popupTimeoutRef.current) {
+      clearTimeout(popupTimeoutRef.current);
+      popupTimeoutRef.current = null;
+    }
     // 1. Hiển thị User Popup
     setUserPopupVisible(true);
     // 2. Giữ nền trắng (thông qua setMouseEnter)
     setMouseEnter(true);
     // 3. Đóng Mega Menu nếu nó đang mở (ưu tiên User Popup)
-    setActiveMenu(null); 
-  }
+    setActiveMenu(null);
+  };
 
- const handleUserBlockMouseLeave = () => {
-    setTimeout(() => {
-        setUserPopupVisible(false);
-        if (activeMenu === null) {
-             setMouseEnter(false);
-        }
-    }, 150); // Delay 150ms
-  }
+  const handleUserBlockMouseLeave = () => {
+    // Đặt timeout để đóng popup
+    popupTimeoutRef.current = setTimeout(() => {
+      setUserPopupVisible(false);
+      if (activeMenu === null) {
+        setMouseEnter(false);
+      }
+    }, 300);
+  };
+
+  // Khi chuột vào popup - cancel timeout
+  const handlePopupMouseEnter = () => {
+    if (popupTimeoutRef.current) {
+      clearTimeout(popupTimeoutRef.current);
+      popupTimeoutRef.current = null;
+    }
+  };
+
+  // Khi chuột rời popup - đóng popup
+  const handlePopupMouseLeave = () => {
+    popupTimeoutRef.current = setTimeout(() => {
+      setUserPopupVisible(false);
+      if (activeMenu === null) {
+        setMouseEnter(false);
+      }
+    }, 300);
+  };
 
   // 💡 THAY ĐỔI 2: Hàm xử lý Đăng Xuất. Cập nhật state userName.
   const handleLogout = () => {
@@ -593,16 +632,20 @@ useEffect(() => {
                 
                 {/* LOGIC HIỂN THỊ POPUP */}
                 {isLoggedIn ? (
-                  <UserAccountPopup 
-                      isVisible={isUserPopupVisible} 
-                      userName={userName} // 💡 Truyền state userName
-                      menuItems={ACCOUNT_MENU}
-                      handleLogout={handleLogout} // 💡 Truyền hàm logout
+                  <UserAccountPopup
+                    isVisible={isUserPopupVisible}
+                    userName={userName}
+                    menuItems={ACCOUNT_MENU}
+                    handleLogout={handleLogout}
+                    onMouseEnter={handlePopupMouseEnter}
+                    onMouseLeave={handlePopupMouseLeave}
                   />
                 ) : (
-                    <UserAccountPopupBefore 
-                        isVisible={isUserPopupVisible} 
-                    />
+                  <UserAccountPopupBefore
+                    isVisible={isUserPopupVisible}
+                    onMouseEnter={handlePopupMouseEnter}
+                    onMouseLeave={handlePopupMouseLeave}
+                  />
                 )}
 
               </div>
