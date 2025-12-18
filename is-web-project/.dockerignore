@@ -1,11 +1,7 @@
 node_modules
 npm-debug.log
-
 vendor
 storage/logs
-
 .git
 .gitignore
-README.md
-
 .env

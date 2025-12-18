@@ -53,4 +53,13 @@ interface IProductRepository
         int $limit = 20,
         string $sort = 'desc'
     );
+    public function searchAll(
+        ?string $keyword = null,
+        ?float $min_price = null,
+        ?float $max_price = null,
+        int $last_id = 0,
+        int $limit = 20,
+        string $sort = 'none',
+        ?array $child_slugs = null
+    );
 }

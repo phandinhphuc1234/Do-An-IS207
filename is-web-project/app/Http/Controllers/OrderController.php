@@ -15,11 +15,11 @@ use App\Repositories\PromotionRepository;
 class OrderController extends Controller
 {
     protected $cartRepository;
-    protected $promotionrepository;
-    public function __construct(ICartRepository $cartRepository)
+    protected $promotionRepository;
+    public function __construct(ICartRepository $cartRepository, PromotionRepository $promotionRepository)
     {
         $this->cartRepository = $cartRepository;
-        $this->promotionrepository = new PromotionRepository();
+        $this->promotionRepository = $promotionRepository;
     }
     public function createOrder(Request $request)
     {
@@ -57,7 +57,8 @@ class OrderController extends Controller
             'created_at' => now(),
             'shipping_fee' => 10,
             'customer_note' => $data['notes'] ?? null,
-            'subtotal' => 0
+            'subtotal' => 0,
+            'shipping_address_id' => $address->address_id,
         ]);
         $order_total_price = 0;
         foreach ($cartItems as $item) {
@@ -79,15 +80,16 @@ class OrderController extends Controller
         $promotionCodes = $data['promotion_codes'] ?? [];
         $total_discount = 0;
         foreach ($promotionCodes as $code) {
-            $promotion = DB::table('promotions')->where('promotion_code', $code)->first();
+            $promotion = Promotion::where('promotion_code', $code)->firstOrFail();
             if ($promotion) {
-                $total_discount += $this->promotionrepository->calculateDiscount($promotion, $order_total_price);
+                $total_discount += $this->promotionRepository->calculateDiscount($promotion, $order_total_price);
                 Promotion::where('promotion_id', $promotion->promotion_id)->update([
                     'is_active' => 0,
                 ]);
                 DB::table('order_promotions')->insert([
                     'order_id' => $order_info->order_id,
                     'promotion_id' => $promotion->promotion_id,
+                    'discount_applied' => $total_discount
                 ]);
             }
         }
@@ -98,6 +100,8 @@ class OrderController extends Controller
         return response()->json([
             'message' => 'Order created successfully',
             'order_id' => $order_info->order_id,
+            'total_amount' => max(0, $order_total_price - $total_discount),
+            'discount_amount' => $total_discount
         ], 201);
     }
     public function getAllUserOrders(Request $request)
@@ -127,6 +131,33 @@ class OrderController extends Controller
         return response()->json([
             'order' => $order,
             'items' => $orderItems,
+        ], 200);
+    }
+    public function cancelOrder(Request $request)
+    {
+        $order_id = $request->route('order_id') ?? $request->input('order_id');
+
+        if (empty($order_id)) {
+            return response()->json([
+                'message' => 'order_id is required'
+            ], 422);
+        }
+
+        $order = Order::where('order_id', $order_id)->first();
+        if (!$order) {
+            return response()->json([
+                'message' => 'Order not found',
+            ], 404);
+        }
+
+        DB::transaction(function () use ($order_id, $order) {
+            OrderItem::where('order_id', $order_id)->delete();
+            $order->delete();
+        });
+
+
+        return response()->json([
+            'message' => 'Order canceled successfully',
         ], 200);
     }
 }
