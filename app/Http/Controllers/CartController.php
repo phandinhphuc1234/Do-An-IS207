@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Repositories\ICartRepository;
-
+use Illuminate\Support\Facades\DB;
 class CartController extends Controller
 {
     protected $cartRepository;
@@ -117,8 +117,10 @@ class CartController extends Controller
             ], 404);
         }
 
-        // Delete all cart items
-        CartItem::where('cart_id', $cart->cart_id)->delete();
+        
+        DB::transaction(function () use ($cart) {
+            CartItem::where('cart_id', $cart->cart_id)->delete();
+        });
 
         return response()->json([
             'success' => true,

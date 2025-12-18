@@ -62,6 +62,63 @@ class ProductRepository implements IProductRepository
 
         return $products;
     }
+    public function searchAll(
+        ?string $keyword = null,
+        ?float $min_price = null,
+        ?float $max_price = null,
+        int $last_id = 0,
+        int $limit = 20,
+        string $sort = 'none',
+        ?array $child_slugs = null
+    ) {
+        $query = "
+        SELECT DISTINCT
+            p.product_id,
+            p.product_name,
+            COALESCE(p.sale_price, p.base_price) AS price,
+            pi.image_url
+        FROM products p
+        JOIN product_images pi 
+            ON pi.product_id = p.product_id 
+            AND pi.is_primary = 1
+    ";
+
+        $params = [];
+
+        if (!empty($child_slugs)) {
+            $placeholders = implode(',', array_fill(0, count($child_slugs), '?'));
+            $query .= "
+            JOIN product_categories pc ON pc.product_id = p.product_id
+            JOIN categories c 
+                ON c.category_id = pc.category_id 
+                AND c.slug IN ($placeholders)
+        ";
+            $params = array_merge($params, $child_slugs);
+        }
+
+        $query .= "
+        WHERE p.product_id > ?
+        AND (? IS NULL OR LOWER(p.product_name) LIKE ?)
+        AND COALESCE(p.sale_price, p.base_price) BETWEEN ? AND ?
+    ";
+
+        $params[] = $last_id;
+        $params[] = $keyword;
+        $params[] = $keyword ? '%' . strtolower($keyword) . '%' : null;
+        $params[] = $min_price ?? 0;
+        $params[] = $max_price ?? 9999999999;
+
+        if ($sort === 'asc' || $sort === 'desc') {
+            $query .= " ORDER BY COALESCE(p.sale_price, p.base_price) " . strtoupper($sort) . ", p.product_id DESC";
+        } else {
+            $query .= " ORDER BY p.product_id DESC";
+        }
+
+        $query .= " LIMIT ?";
+        $params[] = $limit;
+
+        return DB::select($query, $params);
+    }
 
     public function calculatePriceForListProductVariants(array $products)
     {
