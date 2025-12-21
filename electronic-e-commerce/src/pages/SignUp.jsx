@@ -31,7 +31,7 @@ const SignUp = () => {
   // Email validation
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const validDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com'];
+    const validDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com','atomicmail.io'];
     
     if (!email) {
       return "Email is required";
@@ -218,23 +218,38 @@ const SignUp = () => {
         }, 1500);
       }
     } catch (error) {
-      if (error.response?.data?.message) {
-        setMessage(error.response.data.message);
-      } else if (error.response?.data?.data) {
+      console.error("Registration error:", error.response?.data);
+      
+      if (error.response?.data?.data) {
         // Xử lý validation errors từ Laravel
         const serverErrors = error.response.data.data;
         const mappedErrors = {};
-        if (serverErrors.email) mappedErrors.email = serverErrors.email[0];
-        if (serverErrors.password)
+        const errorMessages = [];
+        
+        if (serverErrors.email) {
+          mappedErrors.email = serverErrors.email[0];
+          errorMessages.push(serverErrors.email[0]);
+        }
+        if (serverErrors.password) {
           mappedErrors.password = serverErrors.password[0];
-        if (serverErrors.full_name)
+          errorMessages.push(serverErrors.password[0]);
+        }
+        if (serverErrors.full_name) {
           mappedErrors.firstName = serverErrors.full_name[0];
+          errorMessages.push(serverErrors.full_name[0]);
+        }
+        if (serverErrors.password_confirmation) {
+          mappedErrors.confirmPassword = serverErrors.password_confirmation[0];
+          errorMessages.push(serverErrors.password_confirmation[0]);
+        }
+        
         setErrors(mappedErrors);
-        setMessage("Please fix the errors before submitting");
+        setMessage(errorMessages.length > 0 ? errorMessages.join(", ") : "Validation errors");
+      } else if (error.response?.data?.message) {
+        setMessage(error.response.data.message);
       } else {
         setMessage("Error creating account. Please try again.");
       }
-      console.error(error);
     } finally {
       setIsLoading(false);
     }

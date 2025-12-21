@@ -73,11 +73,16 @@ export default function Login() {
               Authorization: `Bearer ${response.data.access_token}`,
             },
           });
-          localStorage.setItem("user", JSON.stringify(userResponse.data));
+          // API trả về { success: true, data: {...user} }
+          const userData = userResponse.data.data || userResponse.data;
+          localStorage.setItem("user", JSON.stringify(userData));
         } catch {
           // Nếu không lấy được user info, vẫn cho đăng nhập
           localStorage.setItem("user", JSON.stringify({ email }));
         }
+
+        // Dispatch event để Navbar cập nhật
+        window.dispatchEvent(new Event("loginSuccess"));
 
         // Chuyển về trang chủ
         navigate("/");
@@ -108,23 +113,7 @@ export default function Login() {
     }
   }, []);
 
-  // Demo Login - để test khi chưa có backend
-  const handleDemoLogin = () => {
-    const demoUser = {
-      full_name: "Phuc Phan",
-      name: "Phuc Phan",
-      email: "demo@samsung.com",
-      phone: "0123456789",
-      date_of_birth: "1990-01-01",
-      language: "English",
-      country: "Việt Nam",
-      zip_code: "70000",
-    };
-    localStorage.setItem("access_token", "demo_token_12345");
-    localStorage.setItem("refresh_token", "demo_refresh_token_12345");
-    localStorage.setItem("user", JSON.stringify(demoUser));
-    navigate("/");
-  };
+
 
   return (
     <div className="min-h-screen w-screen bg-gray-100 flex flex-col">
@@ -303,19 +292,7 @@ export default function Login() {
             </button>
           </div>
 
-          {/* Demo Login Button - CHỈ DÙNG ĐỂ TEST */}
-          <div className="mt-4">
-            <button
-              type="button"
-              className="w-full flex justify-center items-center py-3 px-4 border-2 border-dashed border-green-400 rounded-lg text-base font-medium text-green-600 bg-green-50 hover:bg-green-100 transition duration-150 ease-in-out"
-              onClick={handleDemoLogin}
-            >
-              🧪 Demo Login (Test Mode)
-            </button>
-            <p className="text-xs text-gray-400 text-center mt-2">
-              Dùng để test khi chưa có backend
-            </p>
-          </div>
+
         </div>
       </div>
 

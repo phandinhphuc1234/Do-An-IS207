@@ -1,15 +1,26 @@
 // src/components/ProductGrid.js
 import React from "react";
 import Card from "./Card"; // Đảm bảo bạn có file Card.js
-import images from "../assets/assets";
-import phone1 from "../assets/phone1.png"
+
 export default function CardSection() {
     // Thêm nhiều sản phẩm để thấy rõ hiệu ứng xuống dòng
     const products = [
-        { title: "Galaxy S25 Ultra", imageSrc: phone1 },
-        { title: "Galaxy Tab S11 Ultra", imageSrc: "https://via.placeholder.com/380x380/f0f0f0/333?text=Tab+S11+Ultra" },
-        { title: "Galaxy Z Flip7", imageSrc: "https://via.placeholder.com/380x380/f0f0f0/333?text=Z+Flip7" },
-        { title: "Galaxy Watch8", imageSrc: "https://via.placeholder.com/380x380/f0f0f0/333?text=Watch8" }
+        {
+            title: "Galaxy S25 Ultra",
+            imageSrc: "https://fdn2.gsmarena.com/vv/bigpic/samsung-galaxy-s25-ultra.jpg"
+        },
+        {
+            title: "Galaxy Tab S10 Ultra",
+            imageSrc: "https://fdn2.gsmarena.com/vv/bigpic/samsung-galaxy-tab-s10-ultra.jpg"
+        },
+        {
+            title: "Galaxy Z Flip6",
+            imageSrc: "https://fdn2.gsmarena.com/vv/bigpic/samsung-galaxy-z-flip6.jpg"
+        },
+        {
+            title: "Galaxy Watch7",
+            imageSrc: "https://fdn2.gsmarena.com/vv/bigpic/samsung-galaxy-watch7.jpg"
+        }
     ];
 
     return (

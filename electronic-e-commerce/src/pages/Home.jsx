@@ -29,7 +29,6 @@ function Home() {
         
         <RecommendedCardSection></RecommendedCardSection>
 
-        <RecommendedCardSection></RecommendedCardSection>
       </main>
 
       <Footer/>

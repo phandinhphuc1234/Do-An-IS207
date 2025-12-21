@@ -1,19 +1,60 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { 
-  User, 
-  Shield, 
-  Lock, 
-  MapPin, 
-  Cloud, 
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  User,
+  Shield,
+  Lock,
+  MapPin,
+  Cloud,
   Smartphone,
   Grid3X3,
   AlertTriangle,
-  ChevronRight
 } from "lucide-react";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+import api from "../lib/api";
 
 function DashBoard() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("account");
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Kiểm tra đăng nhập
+    const accessToken = localStorage.getItem("access_token");
+    if (!accessToken) {
+      navigate("/login");
+      return;
+    }
+
+    // Lấy thông tin user từ API
+    const fetchUser = async () => {
+      try {
+        const response = await api.get("/auth/user");
+        const userData = response.data.data || response.data;
+        setUser(userData);
+        localStorage.setItem("user", JSON.stringify(userData));
+      } catch (error) {
+        // Nếu lỗi, thử lấy từ localStorage
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          try {
+            setUser(JSON.parse(storedUser));
+          } catch (e) {
+            console.error("Error parsing user data", e);
+            navigate("/login");
+          }
+        } else {
+          navigate("/login");
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [navigate]);
 
   const tabs = [
     { id: "account", label: "Account" },
@@ -32,33 +73,37 @@ function DashBoard() {
     { icon: "⚙️", name: "Settings", color: "bg-gray-500" },
   ];
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen w-screen bg-gray-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <Link to="/" className="text-xl font-bold text-black">SAMSUNG</Link>
-            <span className="text-sm text-gray-600">My Account</span>
-          </div>
-          <div className="flex items-center gap-4">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`text-sm px-3 py-2 transition-colors ${
-                  activeTab === tab.id 
-                    ? "text-blue-600 font-medium" 
-                    : "text-gray-600 hover:text-black"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          <User className="w-6 h-6 text-gray-600 cursor-pointer" />
+    <div className="min-h-screen bg-gray-50 w-screen flex flex-col">
+      {/* Navbar */}
+      <Navbar isTransparent={false} />
+
+      {/* Sub Header - Tabs */}
+      <div className="bg-white border-b border-gray-200 pt-16">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-center gap-4">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`text-sm px-3 py-2 transition-colors ${
+                activeTab === tab.id 
+                  ? "text-blue-600 font-medium" 
+                  : "text-gray-600 hover:text-black"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 py-8">
@@ -71,8 +116,8 @@ function DashBoard() {
               <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <User className="w-10 h-10 text-orange-400" />
               </div>
-              <h2 className="text-xl font-bold text-gray-900">Phuc Phan</h2>
-              <p className="text-sm text-gray-500 mt-1">phanducphuc09072005@gmail.com</p>
+              <h2 className="text-xl font-bold text-gray-900">{user?.full_name || user?.name || "User"}</h2>
+              <p className="text-sm text-gray-500 mt-1">{user?.email || "email@example.com"}</p>
             </div>
 
             {/* Services Card */}
@@ -210,21 +255,7 @@ function DashBoard() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-gray-200 bg-white">
-        <div className="max-w-6xl mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between text-xs text-gray-500">
-          <div className="flex items-center gap-4 mb-4 md:mb-0">
-            <span>Vietnam / Tiếng Việt</span>
-            <a href="#" className="hover:underline">Terms of Service</a>
-            <a href="#" className="hover:underline">Privacy Notice</a>
-            <a href="#" className="hover:underline">About</a>
-            <a href="#" className="hover:underline">Contact Us</a>
-          </div>
-          <div className="text-right">
-            <p className="font-medium text-gray-700">Samsung Account</p>
-            <p>Copyright © 1995-2025 Samsung. All Rights Reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
 
       {/* Side Icons */}
       <div className="fixed right-4 top-1/2 -translate-y-1/2 flex flex-col gap-3">

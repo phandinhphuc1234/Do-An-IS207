@@ -14,6 +14,12 @@ import ContactUs from "./pages/Contact_Us";
 import DashBoard from "./pages/Dash_Board";
 import VerifiedEmail from "./pages/VerifiedEmail";
 import Profile from "./pages/Profile";
+import MyRewards from "./pages/MyRewards";
+import Checkout from "./pages/Checkout";
+import OrderSuccess from "./pages/OrderSuccess";
+import MyOrders from "./pages/MyOrders";
+import OrderDetail from "./pages/OrderDetail";
+import AdminDashboard from "./pages/AdminDashboard";
 
 function App() {
   return (
@@ -23,12 +29,18 @@ function App() {
             <Route path="/login" element={<Login/>} />
             <Route path="/signup" element={<SignUp/>} />
             <Route path="/cart" element={<Cart/>} />
+            <Route path="/checkout" element={<Checkout/>} />
+            <Route path="/order-success" element={<OrderSuccess/>} />
+            <Route path="/my-orders" element={<MyOrders/>} />
+            <Route path="/order/:orderId" element={<OrderDetail/>} />
+            <Route path="/admin" element={<AdminDashboard/>} />
             <Route path="/career" element={<Career/>} />
             <Route path="/about-us" element={<AboutUs/>} />
             <Route path="/contact-us" element={<ContactUs/>} />
             <Route path="/dashboard" element={<DashBoard/>} />
             <Route path="/verified_email" element={<VerifiedEmail/>} />
             <Route path="/profile" element={<Profile/>} />
+            <Route path="/my-rewards" element={<MyRewards/>} />
         </Routes>
     </Router>
   );

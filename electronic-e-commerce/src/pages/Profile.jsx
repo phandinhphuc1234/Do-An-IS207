@@ -31,7 +31,11 @@ export default function Profile() {
     const fetchUser = async () => {
       try {
         const response = await api.get("/auth/user");
-        setUser(response.data);
+        // API trả về { success: true, data: {...user} }
+        const userData = response.data.data || response.data;
+        setUser(userData);
+        // Cập nhật localStorage với data mới nhất
+        localStorage.setItem("user", JSON.stringify(userData));
       } catch (error) {
         // Nếu lỗi, thử lấy từ localStorage
         const storedUser = localStorage.getItem("user");

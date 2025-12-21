@@ -286,10 +286,17 @@ function UserAccountPopup({
       {/* 3. Danh sách Menu */}
       <ul className="space-y-3">
         {menuItems.map((item, index) => {
-          // Map "Samsung Account" to /profile
-          const path = item === "Samsung Account" 
-            ? "/profile" 
-            : `/${item.toLowerCase().replace(/\s+/g, '-')}`;
+          // Map menu items to correct paths
+          let path;
+          if (item === "Samsung Account") {
+            path = "/profile";
+          } else if (item === "My Page & Products") {
+            path = "/dashboard";
+          } else if (item === "My Rewards") {
+            path = "/my-rewards";
+          } else {
+            path = `/${item.toLowerCase().replace(/\s+/g, '-')}`;
+          }
           return (
             <li key={index}>
               <Link to={path}>
@@ -440,8 +447,8 @@ function MegaMenuDropdown({ menuKey, isVisible }) {
 // COMPONENT: Navbar (Main) - ĐÃ CẬP NHẬT LOGIC USER POPUP VÀ LOGOUT
 // ============================================
 
-// Khởi tạo trạng thái đăng nhập ban đầu
-const INITIAL_USER_STATE = "Phuc Phan"; // Hoặc "" nếu muốn mặc định là chưa đăng nhập
+// Khởi tạo trạng thái đăng nhập ban đầu - mặc định là chưa đăng nhập
+const INITIAL_USER_STATE = "";
 
 export default function Navbar({ isTransparent = true }) {
   // State cho Mega Menu
@@ -452,17 +459,50 @@ export default function Navbar({ isTransparent = true }) {
   // 💡 THAY ĐỔI 1: State cho trạng thái đăng nhập
   const [userName, setUserName] = useState(INITIAL_USER_STATE);
 
-useEffect(() => {
-     // Đọc dữ liệu từ localStorage (được lưu bởi file Login.jsx)
-     const storedUser = localStorage.getItem("user");
-     if (storedUser) {
-         try {
-             const parsedUser = JSON.parse(storedUser);
-             setUserName(parsedUser.name); // Lấy tên user
-         } catch (e) {
-             console.error("Lỗi parse user data", e);
-         }
-     }
+  // Hàm đọc user từ localStorage
+  const loadUserFromStorage = () => {
+    const storedUser = localStorage.getItem("user");
+    const accessToken = localStorage.getItem("access_token");
+    console.log("Navbar loadUserFromStorage:", { storedUser, accessToken });
+    
+    if (storedUser && accessToken) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        const name = parsedUser.full_name || parsedUser.name || parsedUser.email || "";
+        console.log("Navbar setting userName:", name);
+        setUserName(name);
+      } catch (e) {
+        console.error("Lỗi parse user data", e);
+        setUserName("");
+      }
+    } else {
+      setUserName("");
+    }
+  };
+
+  useEffect(() => {
+    // Đọc user khi component mount
+    loadUserFromStorage();
+
+    // Lắng nghe sự kiện storage thay đổi (khi login/logout từ tab khác)
+    const handleStorageChange = (e) => {
+      if (e.key === "user" || e.key === "access_token") {
+        loadUserFromStorage();
+      }
+    };
+
+    // Lắng nghe custom event khi login thành công (cùng tab)
+    const handleLoginSuccess = () => {
+      loadUserFromStorage();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("loginSuccess", handleLoginSuccess);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("loginSuccess", handleLoginSuccess);
+    };
   }, []);
 
   // State MỚI cho User Popup
@@ -542,8 +582,13 @@ useEffect(() => {
     }, 300);
   };
 
-  // 💡 THAY ĐỔI 2: Hàm xử lý Đăng Xuất. Cập nhật state userName.
+  // 💡 THAY ĐỔI 2: Hàm xử lý Đăng Xuất. Cập nhật state userName và xóa localStorage.
   const handleLogout = () => {
+      // Xóa tokens và user info khỏi localStorage
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("user");
+      
       setUserName(""); // Đặt tên người dùng về rỗng
       setUserPopupVisible(false); // Đóng popup
       setMouseEnter(false); // Reset màu nền (nếu cần)
