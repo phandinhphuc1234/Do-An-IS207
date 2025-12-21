@@ -14,13 +14,19 @@ Route::middleware('check.refresh.token')->group(function () {
 Route::post('/send-code', [AuthController::class, 'sendCode']);
 Route::post('/verify-code', [AuthController::class, 'verifyCode']);
 Route::middleware('auth:api')->prefix('auth')->group(function () {
+    // Admin routes
+    route::get('/admin/orders', [\App\Http\Controllers\AdminController::class, 'getAllOrders']);
+    route::get('/admin/order/{order_id}', [\App\Http\Controllers\AdminController::class, 'getOrderDetails']);
     route::get('/verify-payment', [\App\Http\Controllers\AdminController::class, 'is_pay']);
+    
+    // User routes
     route::get('/user', [\App\Http\Controllers\UserController::class, 'user']);
     route::get('/buyvip', [\App\Http\Controllers\UserController::class, 'buyVip']);
     route::get('/redeem-points', [\App\Http\Controllers\UserController::class, 'redeemPoints']);
+    route::get('/my-promotions', [\App\Http\Controllers\UserController::class, 'myPromotions']);
     route::get('/cart', [\App\Http\Controllers\CartController::class, 'cart']);
     route::post('/cart/additem', [\App\Http\Controllers\CartController::class, 'addItem']);
-    route::delete('cart/cart-item/{cart_item_id}', [\App\Http\Controllers\CartController::class, 'removeFromCart']);
+    route::delete('/cart/cart-item/{cart_item_id}', [\App\Http\Controllers\CartController::class, 'removeFromCart']);
     route::patch('/cart/updatequantity', [\App\Http\Controllers\CartController::class, 'updateCartItemQuantity']);
     route::get('/check-coupon', [\App\Http\Controllers\PromotionController::class, 'checkPromotionExist']);
     route::post('/create-order', [\App\Http\Controllers\OrderController::class, 'createOrder']);

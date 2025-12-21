@@ -131,7 +131,7 @@ class CartController extends Controller
     {
         $validated = $request->validate([
             'cart_item_id' => 'required',
-            'quantity' => ' required|integer|min:1',
+            'quantity' => 'required|integer|min:1',
         ]);
         $cartItem = CartItem::where('cart_item_id', $validated['cart_item_id'])->first();
         if (!$cartItem) {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Promotion;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -14,6 +15,33 @@ class UserController extends Controller
             'data' => $request->user(),
         ]);
     }
+
+    public function myPromotions(Request $request)
+    {
+        $user = $request->user();
+        
+        $promotions = DB::table('user_promotions')
+            ->join('promotions', 'user_promotions.promotion_id', '=', 'promotions.promotion_id')
+            ->where('user_promotions.user_id', $user->user_id)
+            ->where('user_promotions.is_used', false)
+            ->where('promotions.end_date', '>=', now())
+            ->select(
+                'promotions.promotion_id',
+                'promotions.promotion_code',
+                'promotions.discount_type',
+                'promotions.discount_value',
+                'promotions.end_date',
+                'user_promotions.created_at'
+            )
+            ->orderBy('user_promotions.created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $promotions,
+        ]);
+    }
+    
     public function redeemPoints(Request $request)
     {
         $validated = $request->validate([
@@ -29,7 +57,7 @@ class UserController extends Controller
         }
         
         $user->reward_points -= $validated['points'];
-        var_dump($validated['points']);
+        
         $promotion = Promotion::create([
             'promotion_code' => 'RD' . strtoupper(bin2hex(random_bytes(4))),
             'description' => 'Redeemed promotion',
@@ -40,6 +68,15 @@ class UserController extends Controller
             'promotion_name' => 'Redeemed Promotion',
             'usage_limit' => 1,
         ]);
+
+        // Link promotion to user
+        DB::table('user_promotions')->insert([
+            'user_id' => $user->user_id,
+            'promotion_id' => $promotion->promotion_id,
+            'is_used' => false,
+            'created_at' => now(),
+        ]);
+
         $user->save();
 
         return response()->json([

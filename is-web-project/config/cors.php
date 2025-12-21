@@ -17,7 +17,7 @@ return [
         'api/*'
     ],
 
-    'allowed_methods' => ['GET','POST'],   // or specific methods: ['GET','POST','PUT','DELETE','OPTIONS']
+    'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],   // or specific methods: ['GET','POST','PUT','DELETE','OPTIONS']
     'allowed_origins' => [
         'http://localhost:5173',
     ],
