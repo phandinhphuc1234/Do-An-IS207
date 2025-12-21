@@ -14,6 +14,11 @@ import ContactUs from "./pages/Contact_Us";
 import DashBoard from "./pages/Dash_Board";
 import VerifiedEmail from "./pages/VerifiedEmail";
 import Profile from "./pages/Profile";
+import MobilePage from "./pages/MobilePage.jsx";
+import ProductDetailPage from "./pages/ProductDetail.jsx";
+import ShopPage from "./pages/ShopPage.jsx";
+import ProductDetail from "./pages/ProductDetail.jsx";
+import SearchResults from './components/SearchResults';
 
 function App() {
   return (
@@ -29,6 +34,11 @@ function App() {
             <Route path="/dashboard" element={<DashBoard/>} />
             <Route path="/verified_email" element={<VerifiedEmail/>} />
             <Route path="/profile" element={<Profile/>} />
+            <Route path="/mobile" element={<MobilePage/>} />
+            <Route path="/ProductDetailPage" element={<ProductDetailPage/>}/>
+            <Route path="/shop" element={<ShopPage/>}/>
+            <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/resultsearch" element={<SearchResults />} />
         </Routes>
     </Router>
   );

@@ -36,3 +36,4 @@ Route::get('/tv-av/{child_slug}', [ProductController::class, 'searchTVAV']);
 Route::get('/computing-displays/{child_slug}', [ProductController::class, 'searchComputing']);
 Route::get('/product/{product_id}', [ProductController::class, 'getProductDetails']);
 Route::get('/products/search', [ProductController::class, 'searchAll']);
+Route::get('/mobile-all', [ProductController::class, 'getAllMobiles']);
