@@ -41,7 +41,14 @@ class ProductController extends Controller
         $product =  $this->productRepository->getProductByID(
             $request->input('product_id')
         );
-        return $this->productRepository->calculatePriceForListProductVariants($product);
+        $images = $this->productRepository->getProductImages(
+            $request->input('product_id')
+        );
+        return response()->json([
+            'success' => true,
+            'product_variants' => $this->productRepository->calculatePriceForListProductVariants($product),
+            'images' => $images
+        ]);
     }
 
     public function searchAll(Request $request)

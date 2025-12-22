@@ -62,6 +62,14 @@ class ProductRepository implements IProductRepository
 
         return $products;
     }
+    public function getProductImages(int $product_id): array
+    {
+        return DB::select('
+            SELECT image_url, alt_text, is_primary
+            FROM product_images
+            WHERE product_id = :product_id
+        ', ['product_id' => $product_id]);
+    }
     public function searchAll(
         ?string $keyword = null,
         ?float $min_price = null,
