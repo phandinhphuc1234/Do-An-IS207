@@ -20,6 +20,11 @@ import OrderSuccess from "./pages/OrderSuccess";
 import MyOrders from "./pages/MyOrders";
 import OrderDetail from "./pages/OrderDetail";
 import AdminDashboard from "./pages/AdminDashboard";
+import MobilePage from "./pages/MobilePage.jsx";
+import ProductDetailPage from "./pages/ProductDetail.jsx";
+import ShopPage from "./pages/ShopPage.jsx";
+import ProductDetail from "./pages/ProductDetail.jsx";
+import SearchResults from './components/SearchResult';
 
 function App() {
   return (
@@ -41,6 +46,11 @@ function App() {
             <Route path="/verified_email" element={<VerifiedEmail/>} />
             <Route path="/profile" element={<Profile/>} />
             <Route path="/my-rewards" element={<MyRewards/>} />
+            <Route path="/mobile" element={<MobilePage/>} />
+            <Route path="/ProductDetailPage" element={<ProductDetailPage/>}/>
+            <Route path="/shop" element={<ShopPage/>}/>
+            <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/resultsearch" element={<SearchResults />} />
         </Routes>
     </Router>
   );

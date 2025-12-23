@@ -164,14 +164,26 @@ class AuthController extends Controller
 
         // Try to find the user by email
         $user = User::where('email', $credentials['email'])->first();
+        
+        // Check if user exists first
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid credentials'
+            ], 401);
+        }
+        
+        // Check email verified
         if ($user->email_verified == false) {
             return response()->json([
                 'success' => false,
                 'message' => 'Email not verified'
             ], 401);
         }
-        if (!$user || !Hash::check($credentials['password'], $user->password_hash)) {
-            // Password doesn't match or user doesn't exist
+        
+        // Check password
+        if (!Hash::check($credentials['password'], $user->password_hash)) {
+            // Password doesn't match
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid credentials'

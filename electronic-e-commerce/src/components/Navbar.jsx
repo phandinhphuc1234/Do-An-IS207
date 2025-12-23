@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
-import { Search, ShoppingCart, User, ChevronRight } from "lucide-react";
+import { Search as SearchIcon, ShoppingCart, User, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import Search from "./Search.jsx";
 // Đảm bảo đường dẫn import đúng với cấu trúc dự án của bạn
 // import Cart from "../pages/Cart"; 
 
@@ -288,7 +289,9 @@ function UserAccountPopup({
         {menuItems.map((item, index) => {
           // Map menu items to correct paths
           let path;
-          if (item === "Samsung Account") {
+          if (item === "Admin Dashboard") {
+            path = "/admin";
+          } else if (item === "Samsung Account") {
             path = "/profile";
           } else if (item === "My Page & Products") {
             path = "/dashboard";
@@ -451,6 +454,8 @@ function MegaMenuDropdown({ menuKey, isVisible }) {
 const INITIAL_USER_STATE = "";
 
 export default function Navbar({ isTransparent = true }) {
+	const [isAdminUser, setIsAdminUser] = useState(false);
+
   // State cho Mega Menu
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMouseEnter, setMouseEnter] = useState(false);
@@ -471,6 +476,11 @@ export default function Navbar({ isTransparent = true }) {
         const name = parsedUser.full_name || parsedUser.name || parsedUser.email || "";
         console.log("Navbar setting userName:", name);
         setUserName(name);
+        // detect admin by email or role
+        const roles = parsedUser.roles || parsedUser.role || [];
+        const hasAdminRole = Array.isArray(roles) ? roles.includes('admin') : (roles === 'admin');
+        const adminByEmail = parsedUser.email === 'remembermyname2k5@gmail.com';
+        setIsAdminUser(hasAdminRole || adminByEmail);
       } catch (e) {
         console.error("Lỗi parse user data", e);
         setUserName("");
@@ -507,9 +517,6 @@ export default function Navbar({ isTransparent = true }) {
 
   // State MỚI cho User Popup
   const [isUserPopupVisible, setUserPopupVisible] = useState(false);
-
-  // Logic kiểm tra trạng thái đăng nhập
-  const isLoggedIn = userName && userName.length > 0;
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -592,95 +599,56 @@ export default function Navbar({ isTransparent = true }) {
       setUserName(""); // Đặt tên người dùng về rỗng
       setUserPopupVisible(false); // Đóng popup
       setMouseEnter(false); // Reset màu nền (nếu cần)
+        setIsAdminUser(false);
   };
 
 
   return (
-    <div
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${bgColor}`}
-      onMouseLeave={handleContainerMouseLeave} // Logic đóng Mega Menu/Reset nền
-    >
-      <nav className={`w-full ${textColor}`} > 
+    <div className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${shouldBeWhite ? "bg-white shadow-md" : "bg-transparent"}`}
+    onMouseLeave={() => {
+      setActiveMenu(null);
+      setMouseEnter(false);
+    }}>
+      <nav className={`w-full ${shouldBeWhite ? "text-black" : "text-white"}`}> 
         <div className="flex items-center justify-between px-8 py-3 max-w-screen-2xl mx-auto">
-          {/* Left - Logo + Menu */}
+          {/* Logo & Menu */}
           <div className="flex items-center space-x-8">
-            {/* ⚠️ FIX QUAN TRỌNG TẠI ĐÂY:
-                Thêm className={textColor} vào Link để ghi đè màu xanh mặc định của thẻ a.
-                Điều này giúp logo đổi màu trắng/đen theo logic của Navbar.
-            */}
-            <Link to="/" className={`${textColor} hover:opacity-70 transition-colors`}>
-                <div className="font-bold text-2xl cursor-pointer"> <p className={'${textColor}'} > SAMSUNG </p> </div>
-            </Link>     
-            
-            {/* Danh sách menu chính */}
+            <Link to="/" className="font-bold text-2xl tracking-tighter">SAMSUNG</Link>
             <ul className="hidden md:flex space-x-6 font-medium text-sm">
-              {menuItems.map((item) => (
-                <li
-                  key={item}
-                  className="relative cursor-pointer py-2 hover:opacity-70 transition"
-                  onMouseEnter={() => {
-                    setActiveMenu(item);
-                    setMouseEnter(true); 
-                    setUserPopupVisible(false); // Đóng User Popup khi mở Mega Menu
-                  }}
-                >
-                  <span>{item}</span>
+              {["Shop", "Mobile", "TV & AV", "Appliances", "Computing & Displays"].map((item) => (
+                <li key={item} onMouseEnter={() => { setActiveMenu(item); setMouseEnter(true); }}>
+                  <Link to={`/${item.toLowerCase().replace(/\s+|&/g, '-')}`}>{item}</Link>
                 </li>
               ))}
             </ul>
-
-
           </div>
 
-          {/* Right - Search + Icons */}
-          <div className="flex items-center space-x-4">
-            <ul className={`hidden md:flex space-x-4 font-medium text-sm ${textColor}`}>
-              <li 
-                className="hover:opacity-70 cursor-pointer" 
-                onMouseEnter={() => {
-                  setActiveMenu("Support");
-                  setMouseEnter(true); 
-                    setUserPopupVisible(false); // Đóng User Popup
-                }} 
-              >
-                Support
-              </li>
-              <li className="hover:opacity-70 cursor-pointer flex items-center">
-                For Business <ChevronRight className="w-3 h-3 ml-1" />
-              </li>
+          {/* Search & Icons */}
+          <div className="flex items-center space-x-6">
+            <ul className="hidden lg:flex space-x-4 text-sm font-medium">
+              <li onMouseEnter={() => { setActiveMenu("Support"); setMouseEnter(true); }}>Support</li>
+              <li className="flex items-center italic">For Business <ChevronRight size={14}/></li>
             </ul>
 
-            {/* Search */}
-            <div className={`flex items-center rounded-full px-3 py-2 w-44 ${searchBg}`}>
-              <Search className={`w-4 h-4 text-gray-800`} />
-              <input
-                type="text"
-                placeholder="Search"
-                className={`bg-transparent text-sm pl-2 focus:outline-none w-full placeholder-gray-400 ${textColor}`} 
-              />
+            {/* TÍCH HỢP Ô SEARCH MỚI TẠI ĐÂY */}
+            <div className="w-64">
+              <Search />
             </div>
 
-            {/* Icons */}
-            <div className="flex items-center gap-2">
-              <Link to={"/cart"}>
-                <ShoppingCart className={`w-5 h-5 cursor-pointer ${iconColor} hover:opacity-70`} />
-              </Link>
-              {/* KHỐI USER ICON VÀ POPUP */}
+            <div className="flex items-center gap-4">
+              <Link to="/cart"><ShoppingCart size={20}/></Link>
               <div 
-                className="relative flex items-center h-full p-2"
-                onMouseEnter={handleUserBlockMouseEnter}
+                className="relative py-2" 
+                onMouseEnter={handleUserBlockMouseEnter} 
                 onMouseLeave={handleUserBlockMouseLeave}
               >
-                  <User 
-                      className={`w-5 h-5 cursor-pointer ${iconColor} hover:opacity-70`}
-                  />    
-                
-                {/* LOGIC HIỂN THỊ POPUP */}
-                {isLoggedIn ? (
+                <User size={20} className="cursor-pointer"/>
+                {/* Hiển thị popup tùy theo trạng thái đăng nhập */}
+                {userName ? (
                   <UserAccountPopup
                     isVisible={isUserPopupVisible}
                     userName={userName}
-                    menuItems={ACCOUNT_MENU}
+                    menuItems={isAdminUser ? ['Admin Dashboard', ...ACCOUNT_MENU] : ACCOUNT_MENU}
                     handleLogout={handleLogout}
                     onMouseEnter={handlePopupMouseEnter}
                     onMouseLeave={handlePopupMouseLeave}
@@ -692,19 +660,12 @@ export default function Navbar({ isTransparent = true }) {
                     onMouseLeave={handlePopupMouseLeave}
                   />
                 )}
-
               </div>
             </div>
           </div>
         </div>
-
-        {/* Mega Menu */}
-        <MegaMenuDropdown
-          menuKey={activeMenu}
-          isVisible={activeMenu !== null}
-        />
+        <MegaMenuDropdown menuKey={activeMenu} isVisible={activeMenu !== null} />
       </nav>
-
     </div>
   );
 }

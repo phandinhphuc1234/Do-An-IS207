@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\DB;
 use App\Repositories\IProductRepository;
 use App\Repositories\ProductRepository;
 use App\Enums\CategoryMap;
+use App\Models\Product;
+use App\Models\Category;
+use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
@@ -31,18 +34,41 @@ class ProductController extends Controller
             $request->input('last_id')
         );
     }
-    public function getProductDetails(Request $request)
-    {
-        $request->merge($request->route()->parameters());
-        $request->validate([
-            'product_id' => 'required|integer|min:0',
-        ]);
+    public function getAllMobiles() {
+    try {
+        // 1. Lấy các slug thuộc nhóm 'mobile' từ CategoryMap
+        $mobileSlugs = array_keys(array_filter(
+            \App\Enums\CategoryMap::$childToParent,
+            fn($parent) => $parent === 'mobile'
+        ));
 
-        $product =  $this->productRepository->getProductByID(
-            $request->input('product_id')
-        );
-        return $this->productRepository->calculatePriceForListProductVariants($product);
+        // 2. Tìm các sản phẩm thông qua quan hệ 'categories'
+        // Cách này sẽ tự động tìm trong bảng product_categories mà không cần cột category_id ở bảng products
+        $products = \App\Models\Product::whereHas('categories', function($query) use ($mobileSlugs) {
+            $query->whereIn('slug', $mobileSlugs);
+        })->get();
+
+        return response()->json($products);
+
+    } catch (\Throwable $e) {
+        return response()->json([
+            'error' => 'Lỗi truy vấn SQL',
+            'details' => $e->getMessage()
+        ], 500);
     }
+}
+public function getProductDetails(Request $request, $product_id) 
+{
+    // Sử dụng trực tiếp Model Product và dùng first() để chắc chắn trả về 1 Object {}
+    // Không dùng Repository ở đây vì nó đang trả về mảng [] gây lỗi React
+    $product = \App\Models\Product::with('images')->where('product_id', $product_id)->first();
+
+    if (!$product) {
+        return response()->json(['message' => 'Sản phẩm không tồn tại'], 404);
+    }
+
+    return response()->json($product);
+}   
 
     public function searchAll(Request $request)
     {
@@ -76,7 +102,7 @@ class ProductController extends Controller
             last_id: $request->input('last_id', 0),
             limit: $request->input('limit', 20),
             sort: $request->input('sort', 'desc'),
-            child_slugs: $this->parseCsv($request->input('child_slug'))
+            child_slugs: $categories
         );
     }
     private function parseCsv(?string $value): ?array
@@ -212,4 +238,13 @@ class ProductController extends Controller
             sort: $request->input('sort', 'desc')
         );
     }
+    // app/Http/Controllers/ProductController.php
+
+public function show($id)
+{
+    // Phải viết hoa chữ P và đảm bảo đã import Model Product ở đầu file
+    $product = Product::with('images')->where('product_id', $id)->first();
+    
+    return response()->json($product);
+}
 }

@@ -31,7 +31,7 @@ const SignUp = () => {
   // Email validation
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const validDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com','atomicmail.io'];
+    const validDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com','atomicmail.io', 'gamintor.com','m3player.com','gm.uit.edu.vn'];
     
     if (!email) {
       return "Email is required";

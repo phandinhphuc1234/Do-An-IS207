@@ -49,10 +49,21 @@ export default function Login() {
     setError("");
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/login`, {
-        email,
-        password,
-      });
+      const response = await axios.post(
+        `${API_BASE_URL}/login`,
+        {
+          email,
+          password,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+        }
+      );
+
+      console.log("Login response:", response.data);
 
       if (response.data.success) {
         // Lưu tokens vào localStorage

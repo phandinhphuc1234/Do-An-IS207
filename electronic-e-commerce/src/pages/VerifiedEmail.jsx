@@ -11,23 +11,24 @@ const VerifiedEmail = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Lấy email từ state (khi redirect từ SignUp)
   const emailFromState = location.state?.email;
 
-  const [status, setStatus] = useState("pending"); // pending, verifying, success, error
+  const [status, setStatus] = useState("pending");
   const [message, setMessage] = useState("");
   const [email] = useState(emailFromState || "");
   const [verificationCode, setVerificationCode] = useState("");
   const [isResending, setIsResending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [hasAutoSent, setHasAutoSent] = useState(false); // ✅ Track xem đã auto gửi chưa
 
-  // Tự động gửi code khi vào trang (nếu có email)
+  // ✅ Tự động gửi code KHI VỪA VÀO TRANG (chỉ 1 lần duy nhất)
   useEffect(() => {
-    if (email) {
+    if (email && !hasAutoSent) {
       handleSendCode();
+      setHasAutoSent(true); // ✅ Đánh dấu đã gửi rồi
     }
-  }, []);
+  }, []); // ✅ Empty dependency để chỉ chạy 1 lần
 
   // Countdown cho resend
   useEffect(() => {

@@ -102,4 +102,26 @@ export const getUser = () => {
   return user ? JSON.parse(user) : null;
 };
 
+export const ProductService = {
+  // Gọi hàm getRecommendedProducts
+  getRecommended: (limit = 10) => 
+    api.get(`/products/recommended`, { params: { limit } }),
+
+  // Gọi hàm getProductDetails
+  getDetails: (id) => 
+    api.get(`/product/${id}`),
+
+  // Gọi hàm searchMobile (slug là 'galaxy-s24', 'galaxy-z',...)
+  searchMobile: (slug, filters = {}) => 
+    api.get(`/mobile/${slug}`, { params: filters }),
+
+  // Gọi hàm searchTVAV
+  searchTV: (slug, filters = {}) => 
+    api.get(`/tv-av/${slug}`, { params: filters }),
+
+  // Gọi hàm searchAll (Dùng cho thanh tìm kiếm chung)
+  searchAll: (params) => 
+    api.get(`/products/search`, { params })
+};
+
 export default api;

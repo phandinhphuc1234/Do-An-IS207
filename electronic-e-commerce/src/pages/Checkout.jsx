@@ -13,7 +13,7 @@ const OrderSummary = ({ cartItems, subtotal, discount, promoCode, promoInput, se
   const rewardPoints = Math.floor(total * (user?.point_per_dollar || 1));
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6">
+    <div className="bg-white border border-gray-200 rounded-lg p-6 ">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold">Order summary</h2>
         <Link to="/cart" className="text-sm text-blue-600 hover:underline">Edit cart</Link>

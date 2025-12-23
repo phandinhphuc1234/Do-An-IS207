@@ -43,7 +43,6 @@ const StatusBadge = ({ status, type = "order" }) => {
       className="px-3 py-1.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5"
       style={{ backgroundColor: style.bg, color: style.color }}
     >
-      <span>{style.icon}</span>
       {style.label}
     </span>
   );
@@ -429,11 +428,11 @@ const MyOrders = () => {
           {/* Filter Tabs */}
           <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
             {[
-              { key: "all", label: "All Orders", icon: "📦" },
-              { key: "pending", label: "Pending", icon: "⏳" },
-              { key: "processing", label: "Processing", icon: "⚙️" },
-              { key: "completed", label: "Completed", icon: "✓" },
-              { key: "cancelled", label: "Cancelled", icon: "✕" },
+              { key: "all", label: "All Orders" },
+              { key: "pending", label: "Pending" },
+              { key: "processing", label: "Processing" },
+              { key: "completed", label: "Completed" },
+              { key: "cancelled", label: "Cancelled" },
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -445,7 +444,6 @@ const MyOrders = () => {
                     : { backgroundColor: "#ffffff", color: "#374151", border: "1px solid #e5e7eb" }
                 }
               >
-                <span>{tab.icon}</span>
                 {tab.label}
               </button>
             ))}

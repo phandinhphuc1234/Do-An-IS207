@@ -268,6 +268,135 @@ const AdminDashboard = () => {
       .reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0),
   };
 
+  // Charts data helpers (derive from `orders` already fetched)
+  const getMonthlyRevenue = (ordersList, months = 6) => {
+    const now = new Date();
+    const buckets = [];
+    for (let i = months - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+      buckets.push({ key, label: d.toLocaleString(undefined, { month: 'short' }), value: 0 });
+    }
+    ordersList.forEach(o => {
+      if (!o.created_at) return;
+      const d = new Date(o.created_at);
+      const k = `${d.getFullYear()}-${d.getMonth() + 1}`;
+      const bucket = buckets.find(b => b.key === k);
+      if (bucket && o.payment_status?.toLowerCase() === 'paid') {
+        bucket.value += parseFloat(o.total_amount || 0);
+      }
+    });
+    return buckets;
+  };
+
+  const getPaymentStatusCounts = (ordersList) => {
+    const counts = { paid: 0, pending: 0, other: 0 };
+    ordersList.forEach(o => {
+      const s = (o.payment_status || '').toLowerCase();
+      if (s === 'paid') counts.paid++;
+      else if (s === 'pending') counts.pending++;
+      else counts.other++;
+    });
+    return counts;
+  };
+
+  const monthlyRevenue = getMonthlyRevenue(orders, 6);
+  const paymentCounts = getPaymentStatusCounts(orders);
+
+  // Product type revenue (for donut) - compute from order items, fetch details when needed
+  const [productTypeRevenue, setProductTypeRevenue] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const computeRevenue = async () => {
+      const map = {};
+      const toFetch = [];
+      for (const o of orders) {
+        if ((o.payment_status || '').toLowerCase() !== 'paid') continue;
+        if (o.items && o.items.length > 0) {
+          for (const it of o.items) {
+            const type = it.product_type || it.category || it.product_category || 'Unknown';
+            const qty = parseFloat(it.quantity || 1);
+            const unit = parseFloat(it.unit_price || it.price || it.sale_price || 0);
+            const total = parseFloat(it.total_price || (unit * qty)) || 0;
+            map[type] = (map[type] || 0) + total;
+          }
+        } else {
+          toFetch.push(o.order_id);
+        }
+      }
+
+      // fetch details for orders that lack items
+      if (toFetch.length > 0) {
+        for (const id of toFetch) {
+          try {
+            const res = await api.get(`/auth/admin/order/${id}`);
+            if (res.data && res.data.success) {
+              const items = res.data.items || [];
+              for (const it of items) {
+                const type = it.product_type || it.category || it.product_category || 'Unknown';
+                const qty = parseFloat(it.quantity || 1);
+                const unit = parseFloat(it.unit_price || it.price || it.sale_price || 0);
+                const total = parseFloat(it.total_price || (unit * qty)) || 0;
+                map[type] = (map[type] || 0) + total;
+              }
+            }
+          } catch (e) {
+            // ignore fetch errors for individual orders
+            console.error('Failed to fetch order items for', id, e);
+          }
+        }
+      }
+
+      if (cancelled) return;
+      const arr = Object.entries(map).map(([type, value]) => ({ type, value }));
+      arr.sort((a, b) => b.value - a.value);
+      const total = arr.reduce((s, x) => s + x.value, 0) || 1;
+      const withPercent = arr.map(x => ({ ...x, percent: (x.value / total) * 100 }));
+      setProductTypeRevenue(withPercent);
+    };
+
+    computeRevenue();
+    return () => { cancelled = true; };
+  }, [orders]);
+
+  // prepare SVG line chart points
+  const lineChart = (() => {
+    const w = Math.max(360, monthlyRevenue.length * 80);
+    const h = 160;
+    const pad = { t: 12, r: 20, b: 36, l: 28 };
+    const innerW = w - pad.l - pad.r;
+    const innerH = h - pad.t - pad.b;
+    const max = Math.max(...monthlyRevenue.map(m => m.value), 1);
+    const points = monthlyRevenue.map((m, i) => {
+      const x = pad.l + (i / Math.max(1, monthlyRevenue.length - 1)) * innerW;
+      const y = pad.t + innerH - (m.value / max) * innerH;
+      return { x, y, label: m.label, value: m.value };
+    });
+    const poly = points.map(p => `${p.x},${p.y}`).join(' ');
+    return { w, h, pad, points, poly, max };
+  })();
+
+  // build smooth path (quadratic smoothing)
+  const buildSmoothPath = (pts) => {
+    if (!pts || pts.length === 0) return '';
+    if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
+    let d = `M ${pts[0].x} ${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p = pts[i];
+      const q = pts[i + 1];
+      const cx = (p.x + q.x) / 2;
+      const cy = (p.y + q.y) / 2;
+      d += ` Q ${p.x} ${p.y} ${cx} ${cy}`;
+    }
+    // final segment to last point
+    const last = pts[pts.length - 1];
+    d += ` T ${last.x} ${last.y}`;
+    return d;
+  };
+
+  const smoothD = buildSmoothPath(lineChart.points);
+
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen w-screen bg-gray-100">
@@ -360,19 +489,167 @@ const AdminDashboard = () => {
 
           {/* Filter */}
           <div className="flex gap-2 mb-4">
-            {["all", "pending", "paid"].map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                  filter === f
-                    ? "bg-gray-900 text-white"
-                    : "bg-white text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                {f === "all" ? "All Orders" : f.charAt(0).toUpperCase() + f.slice(1)}
-              </button>
-            ))}
+            {["all", "pending", "paid"].map((f) => {
+              const isActive = filter === f;
+              const classes = `px-4 py-2 rounded-full text-sm font-medium transition ${isActive ? 'bg-gray-900 text-white' : 'bg-white hover:bg-gray-50'}`;
+              const inlineStyle = !isActive && f === 'all' ? { backgroundColor: '#ffffff', color: '#000000' } : undefined;
+              return (
+               <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  style={{
+                    backgroundColor: filter === f ? "#111827" : "#ffffff",
+                    color: filter === f ? "#ffffff" : "#000000",
+                    borderRadius: "9999px",
+                    padding: "8px 16px",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                  }}
+                  className="transition hover:bg-gray-50"
+                >
+
+                  {f === 'all' ? 'All Orders' : f.charAt(0).toUpperCase() + f.slice(1)}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Charts + Orders Table */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div className="lg:col-span-2 bg-white rounded-xl p-4 shadow">
+              {/* Monthly Revenue (simple SVG bar chart) */}
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h3 className="text-2xl font-bold">Monthly Revenue</h3>
+                  <p className="text-sm text-gray-500">In USD — last 6 months</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span style={{ width: 10, height: 10, backgroundColor: '#0369a1', borderRadius: 4, display: 'inline-block' }}></span>
+                    <span className="text-sm text-gray-600">Revenue</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span style={{ width: 10, height: 10, backgroundColor: '#93c5fd', borderRadius: 4, display: 'inline-block' }}></span>
+                    <span className="text-sm text-gray-600">Trend</span>
+                  </div>
+                </div>
+              </div>
+              <div className="w-full overflow-x-auto">
+                <svg viewBox={`0 0 ${lineChart.w} ${lineChart.h}`} width="100%" height={lineChart.h}>
+                  <defs>
+                    <linearGradient id="areaGrad" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor="#0369a1" stopOpacity="0.18" />
+                      <stop offset="100%" stopColor="#0369a1" stopOpacity="0.02" />
+                    </linearGradient>
+                  </defs>
+                  {/* subtle vertical bars */}
+                  {lineChart.points.map((p, i) => {
+                    const barW = lineChart.w / Math.max(6, lineChart.points.length) - 8;
+                    const bx = p.x - barW / 2;
+                    return <rect key={i} x={bx} y={lineChart.pad.t} width={barW} height={lineChart.h - lineChart.pad.t - lineChart.pad.b} fill="#f3f4f6" opacity="0.12" rx="6" />;
+                  })}
+                  {/* grid lines */}
+                  {(() => {
+                    const innerH = lineChart.h - lineChart.pad.t - lineChart.pad.b;
+                    return [0, 0.25, 0.5, 0.75, 1].map((t, i) => {
+                      const y = lineChart.pad.t + t * innerH;
+                      return <line key={i} x1={lineChart.pad.l} x2={lineChart.w - lineChart.pad.r} y1={y} y2={y} stroke="#f3f4f6" />;
+                    });
+                  })()}
+
+                  {/* area under smooth line */}
+                  <path d={`${smoothD} L ${lineChart.w - lineChart.pad.r} ${lineChart.h - lineChart.pad.b} L ${lineChart.pad.l} ${lineChart.h - lineChart.pad.b} Z`} fill="url(#areaGrad)" opacity="0.95" />
+
+                  {/* smooth line */}
+                  <path d={smoothD} fill="none" stroke="#0369a1" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+
+                  {/* points (accent) */}
+                  {lineChart.points.map((p, i) => (
+                    <g key={i}>
+                      <circle cx={p.x} cy={p.y} r="6" fill="#ffffff" stroke="#0369a1" strokeWidth="3" />
+                      <circle cx={p.x} cy={p.y} r="3" fill="#0369a1" />
+                      <text x={p.x} y={lineChart.h - lineChart.pad.b + 18} textAnchor="middle" fontSize="11" fill="#64748b">{p.label}</text>
+                      <text x={p.x} y={p.y - 12} textAnchor="middle" fontSize="11" fill="#0f172a" fontWeight={600}>{Math.round(p.value)}</text>
+                    </g>
+                  ))}
+
+                  {/* baseline */}
+                  <line x1={lineChart.pad.l} y1={lineChart.h - lineChart.pad.b} x2={lineChart.w - lineChart.pad.r} y2={lineChart.h - lineChart.pad.b} stroke="#e5e7eb" strokeWidth="1" />
+                </svg>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl p-4 shadow">
+              <h3 className="text-lg font-bold mb-3">Revenue by Product Type</h3>
+              <div className="flex items-center gap-6">
+                <div className="flex-shrink-0">
+                  <div className="flex items-center justify-center" style={{ width: 160, height: 160 }}>
+                    <svg width="160" height="160" viewBox="0 0 42 42">
+                      {(() => {
+                        const segments = (productTypeRevenue && productTypeRevenue.length) ? productTypeRevenue : [{ type: 'No Data', value: 1, percent: 100 }];
+                        const colors = ['#0369a1', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#9ca3af'];
+                        let offset = 0;
+                        return segments.map((s, i) => {
+                          const portion = Math.max(0, Math.min(100, s.percent || 0));
+                          const elem = (
+                            <circle key={i}
+                              r="15.91549431"
+                              cx="21" cy="21"
+                              fill="transparent"
+                              stroke={colors[i % colors.length]}
+                              strokeWidth="6"
+                              strokeDasharray={`${portion} ${100 - portion}`}
+                              strokeDashoffset={-offset}
+                              transform="rotate(-90 21 21)"
+                            />
+                          );
+                          offset += portion;
+                          return elem;
+                        });
+                      })()}
+                      <circle r="10" cx="21" cy="21" fill="#ffffff" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="flex-1">
+                  <div className="space-y-2">
+                    {(() => {
+                      const segs = productTypeRevenue.length ? productTypeRevenue : [{ type: 'No Data', value: 0, percent: 100 }];
+                      const colors = ['#0369a1', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#9ca3af'];
+                      // show top 5 then group rest
+                      const top = segs.slice(0, 5);
+                      const others = segs.slice(5);
+                      let otherTotal = 0;
+                      if (others.length > 0) otherTotal = others.reduce((s, x) => s + x.percent, 0);
+                      return (
+                        <>
+                          {top.map((s, i) => (
+                            <div key={s.type} className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <span style={{ width: 12, height: 12, backgroundColor: colors[i % colors.length], display: 'inline-block', borderRadius: 3 }}></span>
+                                <span className="text-sm text-gray-700">{s.type}</span>
+                              </div>
+                              <div className="text-sm font-medium">{s.percent ? s.percent.toFixed(1) : 0}%</div>
+                            </div>
+                          ))}
+                          {others.length > 0 && (
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <span style={{ width: 12, height: 12, backgroundColor: '#9ca3af', display: 'inline-block', borderRadius: 3 }}></span>
+                                <span className="text-sm text-gray-700">Other</span>
+                              </div>
+                              <div className="text-sm font-medium">{otherTotal.toFixed(1)}%</div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                  <div className="mt-3 text-xs text-gray-500">Percent share of paid revenue by product type</div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Orders Table */}
