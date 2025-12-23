@@ -4,7 +4,7 @@ import React from "react";
 import Home from "./pages/Home.jsx"; // Hoặc đường dẫn tương ứng
 import "./global.css"; // Giữ lại global CSS ở đây
 
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom"; 
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"; 
 import Login from "./pages/Login.jsx";
 import SignUp from "./pages/SignUp.jsx";
 import Cart from "./pages/Cart.jsx";
@@ -15,10 +15,11 @@ import DashBoard from "./pages/Dash_Board";
 import VerifiedEmail from "./pages/VerifiedEmail";
 import Profile from "./pages/Profile";
 import MobilePage from "./pages/MobilePage.jsx";
-import ProductDetailPage from "./pages/ProductDetail.jsx";
 import ShopPage from "./pages/ShopPage.jsx";
-import ProductDetail from "./pages/ProductDetail.jsx";
+import ProductDetailPage from "./pages/ProductDetailPage.jsx";
 import SearchResults from './components/SearchResults';
+import TVAVPage from "./pages/TV-AVPage.jsx";
+import ComputingPage from "./pages/ComputingPage.jsx";
 
 function App() {
   return (
@@ -34,12 +35,16 @@ function App() {
             <Route path="/dashboard" element={<DashBoard/>} />
             <Route path="/verified_email" element={<VerifiedEmail/>} />
             <Route path="/profile" element={<Profile/>} />
-            <Route path="/mobile" element={<MobilePage/>} />
-            <Route path="/ProductDetailPage" element={<ProductDetailPage/>}/>
+            <Route path="/mobile/:child_slug" element={<MobilePage />} />
+            <Route path="/mobile" element={<Navigate to="/mobile/galaxy-smartphone" replace />} />
+            <Route path="/tv-av/:child_slug" element={<TVAVPage />} />
+            <Route path="/tv-av" element={<Navigate to="/tv-av/premium-flagship-tvs" replace />} />
+            <Route path="/computing-displays/:child_slug" element={<ComputingPage />} />
+            <Route path="/computing-displays" element={<Navigate to="/computing-displays/galaxy-book-laptop" replace />} />
             <Route path="/shop" element={<ShopPage/>}/>
-            <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/product/:product_id" element={<ProductDetailPage />} />
             <Route path="/resultsearch" element={<SearchResults />} />
-        </Routes>
+        </Routes> 
     </Router>
   );
 }

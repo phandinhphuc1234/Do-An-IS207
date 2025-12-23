@@ -10,7 +10,6 @@ class Product extends Model
     protected $primaryKey = 'product_id';
     protected $fillable = [
         'product_name',
-        'image_url',
         'slug',
         'sku',
         'brand_id',
@@ -37,7 +36,6 @@ class Product extends Model
         'is_featured' => 'boolean',
     ];
 
-
     public function brand()
     {
         return $this->belongsTo(Brand::class, 'brand_id');
@@ -55,7 +53,7 @@ class Product extends Model
 
     public function images()
     {
-    return $this->hasMany(ProductImage::class, 'product_id', 'product_id');
+        return $this->hasMany(ProductImage::class, 'product_id');
     }
 
     public function reviews()

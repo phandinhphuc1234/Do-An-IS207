@@ -48,37 +48,30 @@ const menuData = {
     ],
   },
   Mobile: {
-    products: [
-      { name: "Galaxy S25 Ultra", category: "Flagship" },
-      { name: "Galaxy S25+", category: "Flagship" },
-      { name: "Galaxy S25", category: "Flagship" },
-      { name: "Galaxy A Series", category: "Mid-range" },
-      { name: "Galaxy Z Fold7", category: "Foldable" },
-      { name: "Galaxy Z Flip7", category: "Foldable" },
+  products: [
+    { name: "Galaxy Smartphone", slug: "galaxy-smartphone" },
+    { name: "Galaxy Tab", slug: "galaxy-tab" },
+    { name: "Certified Renewed", slug: "certified-re-newed" },
     ],
     discover: [
       "5G Smartphones",
       "Galaxy AI Features",
       "Trade-In Program",
       "Mobile Accessories",
-      "Samsung Care+",
+      "Samsung Care+",  
     ],
     promoImages: [
-      { name: "Galaxy S25 Ultra", image: "https://images.samsung.com/is/image/samsung/assets/vn/2307/pcd/pcd-kv/KV_Main_MO.png?$ORIGIN_WEBP$" },
-      { name: "Galaxy Z Fold7", image: "https://images.samsung.com/is/image/samsung/assets/vn/2307/pcd/pcd-kv/KV_Main_MO.png?$ORIGIN_WEBP$" },
-      { name: "Galaxy Z Flip7", image: "https://images.samsung.com/is/image/samsung/assets/vn/2307/pcd/pcd-kv/KV_Main_MO.png?$ORIGIN_WEBP$" },
-      { name: "Galaxy A Series", image: "https://images.samsung.com/is/image/samsung/assets/vn/2307/pcd/pcd-kv/KV_Main_MO.png?$ORIGIN_WEBP$" },
-    ],
+    { name: "Smartphone", slug: "galaxy-smartphone", image: "https://..." },
+    { name: "Galaxy Tab", slug: "galaxy-tab", image: "https://..." },
+    { name: "Renewed", slug: "certified-re-newed", image: "https://..." },
+    ]
   },
-  "TV & AV": {
+  TVAV: {
     products: [
-      { name: "Neo QLED 8K TV", category: "TV" },
-      { name: "The Frame Pro", category: "Lifestyle TV" },
-      { name: "Odyssey OLED", category: "Gaming Monitor" },
-      { name: "Q-series Soundbar", category: "Audio" },
-      { name: "Music Frame", category: "Audio" },
-      { name: "The Freestyle", category: "Projector" },
-    ],
+  { name: "Premium Flagship TVs", slug: "premium-flagship-tvs"},
+  { name: "QLED UHD TVs", slug: "qled-uhd-tvs"},
+  { name: "Lifestyle TVs", slug: "lifestyle-tvs"},
+],
     discover: [
       "Smart TV Features",
       "Gaming Hub",
@@ -87,11 +80,10 @@ const menuData = {
       "TV Buying Guide",
     ],
     promoImages: [
-      { name: "Neo QLED 8K TV", image: "https://images.samsung.com/is/image/samsung/assets/vn/2307/pcd/pcd-kv/KV_Main_MO.png?$ORIGIN_WEBP$" },
-      { name: "The Frame Pro", image: "https://images.samsung.com/is/image/samsung/assets/vn/2307/pcd/pcd-kv/KV_Main_MO.png?$ORIGIN_WEBP$" },
-      { name: "Q-series Soundbar", image: "https://images.samsung.com/is/image/samsung/assets/vn/2307/pcd/pcd-kv/KV_Main_MO.png?$ORIGIN_WEBP$" },
-      { name: "Odyssey OLED", image: "https://images.samsung.com/is/image/samsung/assets/vn/2307/pcd/pcd-kv/KV_Main_MO.png?$ORIGIN_WEBP$" },
-    ],
+  { name: "Premium Flagship TVs", slug: "premium-flagship-tvs", image: "..." },
+  { name: "QLED UHD TVs", slug: "qled-uhd-tvs", image: "..." },
+  { name: "Lifestyle TVs", slug: "lifestyle-tvs", image: "..." },
+],
   },
   Appliances: {
     products: [
@@ -394,23 +386,27 @@ function MegaMenuDropdown({ menuKey, isVisible }) {
           // === GIAO DIỆN MENU SẢN PHẨM THÔNG THƯỜNG ===
           <>
             {/* Left - Promo Images */}
-            <div className="flex-2 pr-10">
-              <div className="grid grid-cols-7 gap-x-4 gap-y-6">
-                {data.promoImages?.map((item, index) => (
-                  <Link
-                    to={`/products/${item.name.toLowerCase().replace(/\s+/g, '-')}`} // Link tạm thời
-                    key={index}
-                    className="flex flex-col items-center justify-center text-center cursor-pointer hover:opacity-75 transition-opacity"
-                  >
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-16 h-16 object-contain mb-2" 
-                    />
-                    <p className="text-xs font-semibold text-gray-800">{item.name}</p>
-                  </Link>
-                ))}
-              </div>
+              <div className="flex-2 pr-10">
+                <div className="grid grid-cols-7 gap-x-4 gap-y-6">
+    {data.promoImages?.map((item, index) => {
+      // LOGIC MỚI: Kiểm tra nếu menu đang mở là Mobile
+      const targetPath = menuKey === "TVAV" 
+    ? `/tv-av/${item.slug}` 
+    : (menuKey === "Mobile" ? `/mobile/${item.slug}` : `/products/...`);
+      
+      return (
+        <Link
+          to={targetPath}
+          key={index}
+          className="flex flex-col items-center justify-center text-center cursor-pointer hover:opacity-75 transition-opacity"
+          onClick={() => setMouseEnter(false)} // Tự đóng menu khi bấm
+        >
+          <img src={item.image} alt={item.name} className="w-16 h-16 object-contain mb-2" />
+          <p className="text-xs font-semibold text-gray-800">{item.name}</p>
+        </Link>
+      );
+    })}
+  </div>
             </div>
 
             {/* Right - Discover */}
@@ -472,12 +468,17 @@ export default function Navbar({ isTransparent = true }) {
           <div className="flex items-center space-x-8">
             <Link to="/" className="font-bold text-2xl tracking-tighter">SAMSUNG</Link>
             <ul className="hidden md:flex space-x-6 font-medium text-sm">
-              {["Shop", "Mobile", "TV & AV", "Appliances", "Computing & Displays"].map((item) => (
-                <li key={item} onMouseEnter={() => { setActiveMenu(item); setMouseEnter(true); }}>
-                  <Link to={`/${item.toLowerCase().replace(/\s+|&/g, '-')}`}>{item}</Link>
-                </li>
-              ))}
-            </ul>
+  {["Shop", "Mobile", "TV-AV", "Appliances", "Computing-Displays"].map((item) => {
+    // LOGIC: Nếu là Mobile thì mặc định vào smartphone
+    const mainLink = item === "Mobile" ? "/mobile/galaxy-smartphone" : `/${item.toLowerCase()}`;
+
+    return (
+      <li key={item} onMouseEnter={() => { setActiveMenu(item); setMouseEnter(true); }}>
+        <Link to={mainLink}>{item}</Link>
+      </li>
+    );
+  })}
+</ul>
           </div>
 
           {/* Search & Icons */}

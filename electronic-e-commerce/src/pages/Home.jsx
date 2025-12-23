@@ -1,6 +1,6 @@
 // src/pages/Home.jsx
 import React from "react";
-import Navbar from "../components/Navbar.jsx"; 
+import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import HeroSection from "../components/HeroSection.jsx";
 import Home_Phone from "../components/Home_Phone.jsx";
