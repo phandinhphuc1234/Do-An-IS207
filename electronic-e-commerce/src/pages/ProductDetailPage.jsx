@@ -165,7 +165,7 @@ const ProductDetailPage = () => {
 
                         <div className="bg-gray-50 p-6 rounded-3xl mb-8">
                             <span className="text-4xl font-black text-black">
-                                ${Number(selectedVariant?.sale_price || selectedVariant?.base_price).toLocaleString()}
+                                ${Math.floor(Number(selectedVariant?.sale_price || selectedVariant?.base_price)).toLocaleString()}
                             </span>
                         </div>
 
