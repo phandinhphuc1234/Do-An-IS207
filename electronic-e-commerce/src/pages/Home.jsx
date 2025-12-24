@@ -1,39 +1,89 @@
-// src/pages/Home.jsx
-import React from "react";
-import Navbar from "../components/Navbar.jsx"; 
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import HeroSection from "../components/HeroSection.jsx";
 import Home_Phone from "../components/Home_Phone.jsx";
 import CardSection from "../components/CardSection.jsx";
 import RecommendedCardSection from "../components/RecommendedCardSection.jsx";
 
-// Lưu ý: Không cần import "./global.css" ở đây vì nó đã được import ở App.jsx (hoặc main.jsx)
-
 function Home() {
-  return (
-    // THAY ĐỔI: Giữ lại cấu trúc Flexbox nhưng loại bỏ min-h-screen để App.jsx quản lý nó
-    <div className="flex flex-grow flex-col items-center justify-center">
-      <Navbar/>
-      
-      {/* THÊM flex-grow để main chiếm hết không gian còn lại */}
-      <main className="flex-grow overflow-x-hidden">
-        <HeroSection/>
-        <Home_Phone></Home_Phone>
-        <CardSection></CardSection>
+    const [mobiles, setMobiles] = useState([]);
+    const [tvs, setTvs] = useState([]);
+    const [computing, setComputing] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-        <Home_Phone></Home_Phone>
-        <CardSection></CardSection>
+    const BASE_URL = 'http://localhost:8000';
+    // Link đúng của bạn: http://localhost:8000/images/products/1.webp
+    const IMAGE_PATH = `${BASE_URL}/images/products`;
 
-        <Home_Phone></Home_Phone>
-        <CardSection></CardSection>
-        
-        <RecommendedCardSection></RecommendedCardSection>
+    useEffect(() => {
+        const fetchHomeProducts = async () => {
+            setLoading(true);
+            try {
+                const params = { limit: 4 };
+                const [resMobile, resTv, resComp] = await Promise.all([
+                    axios.get(`${BASE_URL}/api/mobile/galaxy-smartphone`, { params }), 
+                    axios.get(`${BASE_URL}/api/tv-av/premium-flagship-tvs`, { params }), 
+                    axios.get(`${BASE_URL}/api/computing-displays/galaxy-book-laptop`, { params })
+                ]);
+                setMobiles(Array.isArray(resMobile.data) ? resMobile.data : []);
+                setTvs(Array.isArray(resTv.data) ? resTv.data : []);
+                setComputing(Array.isArray(resComp.data) ? resComp.data : []);
+            } catch (error) {
+                console.error("Lỗi fetch dữ liệu:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchHomeProducts();
+    }, []);
 
-      </main>
+    return (
+        <div className="flex flex-col min-h-screen bg-white">
+            <Navbar isTransparent={true} />
+            
+            <main className="flex-grow overflow-x-hidden">
+                {/* Ảnh Hero - Kiểm tra xem file này tên là hero-main.jpg hay hero-main.webp */}
+                <HeroSection 
+                    bgImage={`${IMAGE_PATH}/hero-main.jpg`} 
+                    title="Galaxy Z Fold7" 
+                    subTitle="Galaxy AI ✨"
+                />
+                
+                {loading ? (
+                    <div className="py-32 flex flex-col items-center">
+                        <div className="w-12 h-12 border-4 border-black border-t-transparent rounded-full animate-spin mb-4"></div>
+                        <p className="font-black text-black">Galaxy Loading...</p>
+                    </div>
+                ) : (
+                    <>
+                        <Home_Phone
+                          bgImage={`${IMAGE_PATH}/1.webp`} // Đúng link bạn đưa
+                          title=""
+                          subTitle=""
+                        />
+                        <CardSection sectionTitle="Mobile Galaxy" data={mobiles} />
 
-      <Footer/>
-    </div>
-  );
+                        <Home_Phone
+                          bgImage={`${IMAGE_PATH}/2.jpg`} // Đảm bảo Backend có file 2.jpg
+                          title=""
+                          subTitle=""
+                        />
+                        <CardSection sectionTitle="Smart TV & Audio" data={tvs} />
+
+                        <Home_Phone
+                          bgImage={`${IMAGE_PATH}/3.jpg`} // Đảm bảo Backend có file 3.jpg
+                          title=""
+                          subTitle=""
+                        />  
+                        <CardSection sectionTitle="Computing & Displays" data={computing} />
+                    </>
+                )}
+                <RecommendedCardSection />
+            </main>
+            <Footer />
+        </div>
+    );
 }
-
 export default Home;

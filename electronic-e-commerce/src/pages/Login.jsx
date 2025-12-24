@@ -204,7 +204,7 @@ export default function Login() {
                 type="submit"
                 className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 hover:scale-[1.01] transition duration-150 ease-in-out"
               >
-                <p className="text-black">Next</p>
+                <p className="text-white">Next</p>
               </button>
             </form>
           )}
@@ -260,7 +260,7 @@ export default function Login() {
                 className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 hover:scale-[1.01] transition duration-150 ease-in-out disabled:opacity-50"
               >
                 {isLoading && <Loader2 className="w-5 h-5 animate-spin" />}
-                <p className="text-black">{isLoading ? "Signing in..." : "Sign In"}</p>
+                <p className="text-white">{isLoading ? "Signing in..." : "Sign In"}</p>
               </button>
             </form>
           )}

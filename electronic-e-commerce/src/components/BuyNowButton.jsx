@@ -7,11 +7,11 @@ const BuyNowButton = ({ text = "Buy now" }) => {
     <button 
       className="
         bg-black               /* Màu nền: Đen */
-        text-black           /* Màu chữ: Trắng */
-        text-xl                /* Kích thước chữ */
+        text-white           /* Màu chữ: Trắng */
+        text-sm                /* Kích thước chữ */
         font-semibold          /* Độ đậm của chữ */
-        px-10                  /* Padding ngang */
-        py-4                   /* Padding dọc */
+        px-4                 /* Padding ngang */
+        py-2                 /* Padding dọc */
         rounded-full           /* Bo tròn hoàn toàn (Rất quan trọng) */
         shadow-lg              /* Đổ bóng nhẹ */
         hover:opacity-80       /* Hiệu ứng khi di chuột */

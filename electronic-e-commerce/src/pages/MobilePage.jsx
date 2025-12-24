@@ -1,123 +1,252 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { ChevronDown, ShoppingCart } from 'lucide-react';
-import Navbar from "../components/Navbar.jsx";
-import Footer from "../components/Footer.jsx";
-import Search from "../components/Search.jsx";
+import { useParams, useNavigate } from 'react-router-dom';
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 
 const MobilePage = () => {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+    const { child_slug } = useParams();
+    const navigate = useNavigate();
 
-  // SỬA LỖI: Định nghĩa hàm formatCurrency
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(parseFloat(amount) || 0);
-  };
+    const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const [errorMsg, setErrorMsg] = useState(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
+    // 1. Định nghĩa BASE_URL để dùng cho cả API và Ảnh
+    const BASE_URL = 'http://localhost:8000';
+    
+    const [filters, setFilters] = useState({
+        keyword: '',
+        ram: [],
+        storage: [],
+        color: [],
+        sort: 'desc',
+        last_id: 0,
+        limit: 12
+    });
+
+    const fetchProducts = useCallback(async (isRefresh = true) => {
+        if (!child_slug) return;
         setLoading(true);
-        // Gọi API lấy sản phẩm mobile
-        const response = await axios.get('http://localhost:8000/api/mobile-all');
-        setProducts(response.data);
-      } catch (err) {
-        // Lấy thông tin lỗi SQL nếu có để hiển thị
-        setError(err.response?.data?.details || "Không thể kết nối với máy chủ.");
-      } finally {
-        setLoading(false);
-      }
+        setErrorMsg(null);
+        
+        try {
+            const currentLastId = isRefresh ? 0 : filters.last_id;
+            
+            const params = {
+                ...filters,
+                ram: filters.ram.join(','),
+                storage: filters.storage.join(','),
+                color: filters.color.join(','),
+                last_id: currentLastId
+            };
+
+            // 2. Sử dụng BASE_URL trong lời gọi API
+            const response = await axios.get(`${BASE_URL}/api/mobile/${child_slug}`, { params });
+            
+            if (Array.isArray(response.data)) {
+                const data = response.data;
+                if (isRefresh) setProducts(data);
+                else setProducts(prev => [...prev, ...data]);
+
+                if (data.length < filters.limit) {
+                    setHasMore(false);
+                } else {
+                    setHasMore(true);
+                    setFilters(prev => ({ ...prev, last_id: data[data.length - 1].product_id }));
+                }
+            }
+        } catch (error) {
+            setErrorMsg("Không thể kết nối đến máy chủ.");
+            console.error("Fetch Error:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, [child_slug, filters]);
+
+    useEffect(() => {
+        if (!child_slug) {
+            navigate('/mobile/galaxy-smartphone');
+        } else {
+            fetchProducts(true);
+        }
+    }, [child_slug, navigate]);
+
+    const toggleArrayFilter = (key, value) => {
+        const current = [...filters[key]];
+        const index = current.indexOf(value);
+        index > -1 ? current.splice(index, 1) : current.push(value);
+        setFilters(prev => ({ ...prev, [key]: current }));
     };
-    fetchData();
-  }, []);
 
-  // XÓA CHUYỂN CẢNH ĐEN: Không dùng return "Đang tải" ở đây nữa
+    return (
+        <div className="bg-white min-h-screen w-full flex flex-col">
+            <Navbar isTransparent={false} />
 
-  return (
-    <div className="w-screen min-h-screen bg-white pt-20">
-      <Navbar isTransparent={false} />
-      <Search />
-      {/* Header & Filter Bar (Hiện ngay lập tức) */}
-      <div className="px-10 py-6 border-b border-gray-100 flex justify-between items-center">
-        <div className="flex items-center gap-6">
-          <span className="font-bold text-lg border-r pr-6 border-gray-300">Filters</span>
-          <span className="text-gray-600 font-medium">
-            {loading ? "..." : products.length} Results
-          </span>
-        </div>
-        <div className="flex items-center gap-2 cursor-pointer font-bold">
-          Sort Recommended <ChevronDown size={18} />
-        </div>
-      </div>
-
-      {/* Thanh Filter mẫu theo image_950f60.png */}
-      <div className="px-10 py-4 flex flex-wrap gap-3 bg-white border-b border-gray-50 overflow-x-auto whitespace-nowrap">
-        {["Shop Online", "Price Range", "Mobile series", "Carrier", "Storage"].map((f) => (
-          <button key={f} className="px-4 py-2 border border-gray-300 rounded-full text-sm font-semibold flex items-center gap-2 hover:border-black transition-all">
-            {f} <ChevronDown size={14} />
-          </button>
-        ))}
-      </div>
-
-      <main className="px-10 py-12">
-        {loading ? (
-          /* Hiệu ứng tải nhẹ bên trong trang thay vì màn hình đen */
-          <div className="flex flex-col items-center justify-center py-20">
-             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-black"></div>
-             <p className="mt-4 text-gray-500">Đang tìm sản phẩm...</p>
-          </div>
-        ) : error ? (
-          <div className="text-center py-20 text-red-500 font-bold bg-red-50 rounded-3xl border p-6">
-            <p>Lỗi: {error}</p>
-            <button onClick={() => window.location.reload()} className="mt-4 underline">Tải lại trang</button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {products.map((item) => (
-              <div key={item.product_id} className="group border border-gray-100 rounded-[40px] p-8 hover:shadow-2xl transition-all duration-300 flex flex-col h-full">
-                {/* Hình ảnh */}
-                <div className="aspect-square mb-8 flex items-center justify-center overflow-hidden">
-                  <img 
-                    src={`http://localhost:8000${item.image_url}`} 
-                    alt={item.product_name}
-                    className="h-full object-contain group-hover:scale-105 transition-transform duration-500"
-                  />
-                </div>
-
-                {/* Thông tin sản phẩm */}
-                <div className="flex-grow flex flex-col items-center">
-                    <h3 className="text-xl font-bold mb-3 text-center line-clamp-2 min-h-[3.5rem] group-hover:underline">
-                        {item.product_name}
-                    </h3>
-                    <p className="text-[#2189ff] text-2xl font-black mb-8">
-                        {formatCurrency(item.sale_price || item.base_price)}
-                    </p>
-                </div>
+            <div className="flex-grow w-full px-4 md:px-10 py-8 flex flex-col md:flex-row gap-8 mt-14">
                 
-                {/* NÚT BẤM */}
-                <div className="flex flex-col gap-3 mt-auto">
-                  <button className="w-full bg-black text-white py-4 rounded-2xl font-bold text-sm hover:bg-gray-800 transition-colors uppercase tracking-wider">
-                    BUY
-                  </button>
-                  
-                  {/* THÊM VÀO GIỎ (ADD TO CARD) - Nằm dưới MUA NGAY */}
-                  <button className="w-full border-2 border-black text-white py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors uppercase tracking-wider">
-                    <ShoppingCart size={18} /> ADD TO CARD
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
+                <aside className="w-full md:w-72 flex-shrink-0 space-y-8 bg-gray-50 p-6 rounded-2xl h-fit relative top-26">
+                    <h3 className="font-bold text-xl justify-center border-b pb-3 text-black flex items-center gap-2">
+                        <span></span> Bộ lọc Mobile
+                    </h3>
+                    
+                    <div>
+                        <h4 className="text-black font-bold mb-3 text-xs uppercase tracking-widest">Thứ tự hiển thị</h4>
+                        <select 
+                            value={filters.sort}
+                            onChange={(e) => setFilters(prev => ({ ...prev, sort: e.target.value }))}
+                            className="w-full border-none rounded-xl p-3 text-sm outline-none bg-white shadow-sm font-medium"
+                        >
+                            <option value="desc">Giá: Cao đến Thấp</option>
+                            <option value="asc">Giá: Thấp đến Cao</option>
+                        </select>
+                    </div>
 
-      <Footer />
-    </div>
-  );
+                    <div>
+                        <h4 className="text-black font-bold mb-3 text-xs uppercase tracking-widest">Dung lượng RAM</h4>
+                        <div className="grid grid-cols-2 gap-2">
+                            {['6GB', '8GB', '12GB', '16GB'].map(item => (
+                                <button 
+                                    key={item}
+                                    onClick={() => toggleArrayFilter('ram', item)}
+                                    className={`py-2 text-xs font-bold rounded-xl border transition-all ${
+                                        filters.ram.includes(item) 
+                                        ? 'bg-black border-black text-white shadow-md' 
+                                        : 'bg-white border-gray-200 text-gray-600 hover:border-black'
+                                    }`}
+                                >
+                                    {item}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 className="text-black font-bold mb-3 text-xs uppercase tracking-widest">Bộ nhớ trong</h4>
+                        <div className="space-y-2">
+                            {['128GB', '256GB', '512GB', '1TB'].map(item => (
+                                <label key={item} className="flex items-center gap-3 cursor-pointer group p-1">
+                                    <input type="checkbox" className="w-5 h-5 rounded-md accent-black" 
+                                        checked={filters.storage.includes(item)} 
+                                        onChange={() => toggleArrayFilter('storage', item)} 
+                                    />
+                                    <span className="text-sm font-medium text-gray-600 group-hover:text-black transition-colors">{item}</span>
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 className="text-black font-bold mb-3 text-xs uppercase tracking-widest">Màu sắc</h4>
+                        <div className="flex flex-wrap gap-3">
+                            {['Titanium Gray', 'Phantom Black', 'Cream', 'Lavender'].map(color => (
+                                <button
+                                    key={color}
+                                    onClick={() => toggleArrayFilter('color', color)}
+                                    className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${
+                                        filters.color.includes(color) ? 'border-blue-500 scale-110 shadow-lg' : 'border-gray-200'
+                                    }`}
+                                    title={color}
+                                    style={{ backgroundColor: color.split(' ').pop().toLowerCase() }}
+                                />
+                            ))}
+                        </div>
+                    </div>
+
+                    <button 
+                        onClick={() => fetchProducts(true)} 
+                        className="w-full bg-black text-white py-4 rounded-xl font-bold hover:bg-gray-800 transition-all active:scale-95 shadow-lg shadow-gray-200"
+                    >
+                        Áp dụng bộ lọc
+                    </button>
+                </aside>
+
+                <main className="flex-1">
+                    <div className="mb-8">
+                        <h1 className="text-4xl font-black text-gray-900 uppercase tracking-tighter">
+                            {child_slug?.replace(/-/g, ' ')}
+                        </h1>
+                        <p className="text-gray-400 font-medium mt-1">Khám phá thế giới Galaxy mới nhất</p>
+                    </div>
+
+                    {errorMsg && <div className="bg-red-50 text-red-500 p-4 rounded-xl mb-6 font-bold text-center border border-red-100">{errorMsg}</div>}
+
+                    {Array.isArray(products) && products.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8">
+                            {products.map((product) => (
+                                <div 
+                                    key={product.product_id} 
+                                    onClick={() => navigate(`/product/${product.product_id}`)}
+                                    className="cursor-pointer bg-white rounded-[32px] p-6 border border-gray-50 hover:shadow-2xl transition-all duration-500 group"
+                                >
+                                    <div className="aspect-square w-full mb-6 relative rounded-2xl bg-gray-50 p-6 overflow-hidden">
+                                        <img 
+                                            // 3. FIX: Nối BASE_URL vào ảnh
+                                            src={`${BASE_URL}${product.image_url}`} 
+                                            alt={product.product_name} 
+                                            className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-700" 
+                                            onError={(e) => { e.target.src = 'https://via.placeholder.com/300?text=No+Image'; }}
+                                        />
+                                    </div>
+                                    
+                                    <h3 className="font-bold text-gray-900 text-lg mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                                        {product.product_name}
+                                    </h3>
+
+                                    <div className="flex justify-between items-center mb-6">
+                                        <span className="text-2xl font-black text-black">
+                                            ${Number(product.price).toLocaleString()}
+                                        </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button className="bg-black text-white py-3 rounded-2xl font-bold text-sm hover:opacity-80 transition-opacity">
+                                            Mua ngay
+                                        </button>
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                navigate(`/product/${product.product_id}`);
+                                            }}
+                                            className="bg-white border-2 border-black text-black py-3 rounded-2xl font-bold text-sm hover:bg-black hover:text-white transition-all"
+                                        >
+                                            Chi tiết
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        !loading && (
+                            <div className="text-center py-32 bg-gray-50 rounded-3xl">
+                                <p className="text-gray-400 text-lg font-medium">Rất tiếc, chưa tìm thấy điện thoại phù hợp.</p>
+                            </div>
+                        )
+                    )}
+                    
+                    {loading && (
+                        <div className="text-center py-20 flex flex-col items-center">
+                            <div className="w-10 h-10 border-4 border-black border-t-transparent rounded-full animate-spin mb-4"></div>
+                            <p className="font-bold text-gray-600 tracking-widest">GALAXY LOADING...</p>
+                        </div>
+                    )}
+
+                    {hasMore && products.length > 0 && !loading && (
+                        <div className="mt-16 text-center pb-12">
+                            <button 
+                                onClick={() => fetchProducts(false)} 
+                                className="bg-white border-2 border-black text-black px-16 py-4 rounded-full font-black hover:bg-black hover:text-white transition-all transform active:scale-90 shadow-xl"
+                            >
+                                KHÁM PHÁ THÊM
+                            </button>
+                        </div>
+                    )}
+                </main>
+            </div>
+            <Footer />
+        </div>
+    );
 };
 
 export default MobilePage;

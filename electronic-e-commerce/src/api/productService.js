@@ -1,4 +1,10 @@
+<<<<<<< HEAD
 import api from "../lib/api";
+=======
+import axios from 'axios';
+
+const API_URL = "http://localhost:8000/api";
+>>>>>>> 86544fb1e70a824ccd928e881048729fd40b73c5
 
 export const ProductService = {
   // Hàm lấy tất cả sản phẩm dùng searchAll (Giữ nguyên logic của bạn)
@@ -16,6 +22,27 @@ export const ProductService = {
     });
   },
   getById: (id) => {
+<<<<<<< HEAD
     return api.get(`/product/${id}`);
   }
+=======
+        return axios.get(`${API_URL}/products/${id}`);
+    },
+  getAllMobile: (filters) => {
+        return axios.get(`${API_URL}/mobile`, { params: filters });
+    },
+    searchMobile: (slug, filters) => {
+        return axios.get(`${API_URL}/mobile/type/${slug}`, { params: filters });
+    },
+  getAllMobile: (filters) => {
+    return axios.get(`${API_URL}/products`, { 
+        params: {
+            series: filters.series,
+            ram: filters.ram,
+            storage: filters.storage,
+            sort: filters.sort
+        } 
+    });
+}
+>>>>>>> 86544fb1e70a824ccd928e881048729fd40b73c5
 };

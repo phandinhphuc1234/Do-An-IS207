@@ -586,7 +586,7 @@ const Cart = () => {
               </Link>
             )}
 
-            <Link to="/">
+            <Link to="/shop">
               <p className="text-sm text-blue-600 hover:underline cursor-pointer">Continue Shopping</p>
             </Link>
           </div>

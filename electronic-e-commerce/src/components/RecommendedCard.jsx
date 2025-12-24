@@ -4,9 +4,7 @@ import React from "react";
 export function RecommendedCard({ 
     imageSrc = "https://via.placeholder.com/300x300", 
     description, 
-    price, 
-    saveAmount, 
-    originalPrice 
+    saveAmount
 }) {
      return (
         <div className="group min-w-[300px] flex flex-col cursor-pointer">
@@ -31,16 +29,10 @@ export function RecommendedCard({
                 {/* Price Area */}
                 <div className="mt-auto">
                     <div className="flex items-center gap-2 mb-1">
-                        <span className="text-3xl font-bold text-black">
-                            ${price}
-                        </span>
                         <span className="text-base font-semibold text-red-600">
                             Save ${saveAmount}
                         </span>
                     </div>
-                    <p className="text-base text-gray-500 line-through">
-                        ${originalPrice}
-                    </p>
                 </div>
             </div>
         </div>

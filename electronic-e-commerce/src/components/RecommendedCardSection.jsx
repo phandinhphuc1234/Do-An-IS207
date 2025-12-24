@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import api from "../lib/api";
 
-// Component RecommendedCard - Same size as CardSection (w-[295px] h-[350px])
+// Component RecommendedCard - Đã sửa lỗi ảnh bị chìm
 export function RecommendedCard({
   productId,
   imageSrc = "https://via.placeholder.com/300x300",
@@ -17,15 +17,15 @@ export function RecommendedCard({
 
   return (
     <Link to={`/product/${productId}`} className="group flex-shrink-0 w-[295px] flex flex-col cursor-pointer">
-      {/* Image Container - same as Card.jsx */}
+      {/* Image Container - Đã sửa bg-gray-50 và border để ảnh nổi bật hơn */}
       <div
-        className="w-[295px] h-[350px] flex justify-center items-center bg-white rounded-lg mb-4 
-                            group-hover:bg-gray-50 transition-colors overflow-hidden shadow-xl"
+        className="w-[295px] h-[350px] flex justify-center items-center bg-gray-50 rounded-lg mb-4 
+                   group-hover:bg-white transition-all overflow-hidden shadow-md border border-gray-100 relative"
       >
         <img
           src={imgError ? fallbackImg : imageSrc}
           alt={description}
-          className="max-w-[90%] max-h-[90%] object-contain"
+          className="max-w-[85%] max-h-[85%] object-contain relative z-10 transition-transform duration-500 group-hover:scale-105"
           onError={() => setImgError(true)}
         />
       </div>
@@ -33,7 +33,7 @@ export function RecommendedCard({
       {/* Product Info */}
       <div className="flex flex-col">
         <h3
-          className="text-base font-bold leading-snug mb-3 line-clamp-4"
+          className="text-base font-bold leading-snug mb-3 line-clamp-2" // Chỉnh lại line-clamp cho gọn
           style={{ fontFamily: "Inter, sans-serif", color: "#000" }}
         >
           {description}
@@ -41,9 +41,6 @@ export function RecommendedCard({
 
         <div className="mt-auto">
           <div className="flex items-baseline gap-2 flex-wrap">
-            <span className="text-lg font-bold" style={{ fontFamily: "Inter, sans-serif", color: "#000" }}>
-              ${price}
-            </span>
             {saveAmount > 0 && (
               <span className="text-sm font-medium" style={{ fontFamily: "Inter, sans-serif", color: "#00a9a5" }}>
                 Save ${saveAmount}
@@ -69,19 +66,14 @@ export default function RecommendedCardSection() {
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch recommended products from API
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const response = await api.get("/products/recommended?limit=12");
         const data = response.data.data || response.data || [];
-
-        // Base URL for images from backend
         const imageBaseUrl = import.meta.env.VITE_BACKEND_API_URL?.replace("/api", "") || "http://localhost:8000";
 
-        // Map API response to component format
         const mappedProducts = data.map((product) => {
-          // Build full image URL
           let imageSrc = "https://via.placeholder.com/300x300";
           if (product.image_url) {
             imageSrc = product.image_url.startsWith("http")
@@ -94,10 +86,11 @@ export default function RecommendedCardSection() {
           }
 
           return {
-            id: product.product_id,
+            id: product.product_id || product.id,
             imageSrc,
             description: product.product_name || product.name,
-            price: product.min_price || product.price || 0,
+            // SỬA LỖI GIÁ: Ưu tiên lấy 'price' trước, sau đó mới đến các thuộc tính khác
+            price: product.price || product.min_price || null,
             saveAmount: product.discount_amount || 0,
             originalPrice: product.original_price || null,
           };
@@ -106,7 +99,6 @@ export default function RecommendedCardSection() {
         setProducts(mappedProducts);
       } catch (error) {
         console.error("Error fetching recommended products:", error);
-        // Fallback to empty array
         setProducts([]);
       } finally {
         setIsLoading(false);
@@ -119,13 +111,11 @@ export default function RecommendedCardSection() {
   const handleScroll = useCallback(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
-
     const scrollLeft = container.scrollLeft;
     const scrollWidth = container.scrollWidth;
     const clientWidth = container.clientWidth;
     const maxScroll = scrollWidth - clientWidth;
     const progress = maxScroll > 0 ? (scrollLeft / maxScroll) * 100 : 0;
-
     setScrollProgress(Math.min(progress, 100));
     setCanScrollLeft(scrollLeft > 0);
     setCanScrollRight(scrollLeft < maxScroll - 1);
@@ -134,15 +124,12 @@ export default function RecommendedCardSection() {
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
-
     container.addEventListener("scroll", handleScroll);
     handleScroll();
-
     return () => container.removeEventListener("scroll", handleScroll);
   }, [handleScroll, products]);
 
   const scrollAmount = 400;
-
   const scrollLeftFn = useCallback(() => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({ left: -scrollAmount, behavior: "smooth" });
@@ -166,9 +153,7 @@ export default function RecommendedCardSection() {
     );
   }
 
-  if (products.length === 0) {
-    return null;
-  }
+  if (products.length === 0) return null;
 
   return (
     <div className="w-full max-w-7xl mx-auto py-10 px-4">
@@ -194,9 +179,7 @@ export default function RecommendedCardSection() {
         </div>
       </div>
 
-      {/* Progress Bar & Navigation - Centered */}
       <div className="flex items-center justify-center gap-8 mt-8">
-        {/* Progress Bar */}
         <div className="w-96 h-1 relative bg-gray-200 rounded-full">
           <div
             className="absolute top-0 left-0 h-full rounded-full transition-all duration-300"
@@ -204,29 +187,18 @@ export default function RecommendedCardSection() {
           ></div>
         </div>
 
-        {/* Navigation Buttons - Circle 40x40 */}
         <div className="flex gap-3">
           <button
             onClick={scrollLeftFn}
             disabled={!canScrollLeft}
             className="flex items-center justify-center transition-all bg-white"
             style={{
-              width: "40px",
-              height: "40px",
-              minWidth: "40px",
-              minHeight: "40px",
-              maxWidth: "40px",
-              maxHeight: "40px",
-              borderRadius: "50%",
+              width: "40px", height: "40px", borderRadius: "50%",
               border: canScrollLeft ? "1px solid #000" : "1px solid #d1d5db",
               cursor: canScrollLeft ? "pointer" : "not-allowed",
-              fontSize: "20px",
-              fontWeight: "bold",
+              fontSize: "20px", fontWeight: "bold",
               color: canScrollLeft ? "#000" : "#d1d5db",
-              padding: 0,
-              lineHeight: 1,
             }}
-            aria-label="Scroll left"
           >
             ‹
           </button>
@@ -236,22 +208,12 @@ export default function RecommendedCardSection() {
             disabled={!canScrollRight}
             className="flex items-center justify-center transition-all bg-white"
             style={{
-              width: "40px",
-              height: "40px",
-              minWidth: "40px",
-              minHeight: "40px",
-              maxWidth: "40px",
-              maxHeight: "40px",
-              borderRadius: "50%",
+              width: "40px", height: "40px", borderRadius: "50%",
               border: canScrollRight ? "1px solid #000" : "1px solid #d1d5db",
               cursor: canScrollRight ? "pointer" : "not-allowed",
-              fontSize: "20px",
-              fontWeight: "bold",
+              fontSize: "20px", fontWeight: "bold",
               color: canScrollRight ? "#000" : "#d1d5db",
-              padding: 0,
-              lineHeight: 1,
             }}
-            aria-label="Scroll right"
           >
             ›
           </button>

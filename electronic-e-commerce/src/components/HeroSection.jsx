@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 
 const YOUTUBE_VIDEO_ID = "ePdbj2bZ-Ro";
-const LOOP_AT_SECONDS = 66; // Loop at 1:06
+const LOOP_AT_SECONDS = 60; // Loop at 1:06
 
 const HeroSection = () => {
   const playerRef = useRef(null);

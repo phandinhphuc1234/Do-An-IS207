@@ -1,55 +1,36 @@
-// src/components/ProductGrid.js
+// src/components/CardSection.jsx
 import React from "react";
-import Card from "./Card"; // Đảm bảo bạn có file Card.js
+import Card from "./Card"; 
 
-export default function CardSection() {
-    // Thêm nhiều sản phẩm để thấy rõ hiệu ứng xuống dòng
-    const products = [
-        {
-            title: "Galaxy S25 Ultra",
-            imageSrc: "https://fdn2.gsmarena.com/vv/bigpic/samsung-galaxy-s25-ultra.jpg"
-        },
-        {
-            title: "Galaxy Tab S10 Ultra",
-            imageSrc: "https://fdn2.gsmarena.com/vv/bigpic/samsung-galaxy-tab-s10-ultra.jpg"
-        },
-        {
-            title: "Galaxy Z Flip6",
-            imageSrc: "https://fdn2.gsmarena.com/vv/bigpic/samsung-galaxy-z-flip6.jpg"
-        },
-        {
-            title: "Galaxy Watch7",
-            imageSrc: "https://fdn2.gsmarena.com/vv/bigpic/samsung-galaxy-watch7.jpg"
-        }
-    ];
+export default function CardSection({ sectionTitle, data }) {
+    // Nếu data chưa kịp về (loading), có thể hiện một khung trống hoặc null
+    if (!data) return null; 
 
     return (
         <section className="bg-white py-16 sm:py-24">
             <div className="container mx-auto px-4">
-                <h2 className="text-3xl sm:text-4xl font-bold text-center text-black mb-12">
-                    This week's offers
+                <h2 className="text-3xl sm:text-4xl font-bold text-center text-black mb-12 uppercase tracking-tighter">
+                    {sectionTitle}
                 </h2>
             </div>
             
-            {/* 1. Container bên ngoài cho phép cuộn ngang khi cần */}
             <div className="w-full">
-
-                {/* 2. Container bên trong có chiều rộng full và dùng flexbox để bọc các card */}
-                <div className="min-w-full mx-auto px-4 flex flex-wrap justify-center gap-10">
-                    
-                    {/* Lặp qua các sản phẩm */}
-                    {products.map((product) => (
-                        <Card
-                            key={product.title}
-                            title={product.title}
-                            imageSrc={product.imageSrc}
-                            // 3. Quan trọng: Cung cấp một chiều rộng cơ sở cho mỗi Card
-                            //    và ngăn nó co lại
-                            className="w-[380px] flex-shrink-0"
-                        />
-                    ))}
+                <div className="mx-auto px-4 flex flex-wrap justify-center gap-10">
+                    {Array.isArray(data) && data.length > 0 ? (
+                        data.map((product) => (
+                            <Card
+                                key={product.product_id}
+                                productId={product.product_id}
+                                title={product.product_name}
+                                // Theo API của bạn, image_url là "/images/products/..."
+                                imageSrc={product.image_url} 
+                                className="w-[380px] flex-shrink-0"
+                            />
+                        ))
+                    ) : (
+                        <p className="text-gray-400 italic">No products found in this category.</p>
+                    )}
                 </div>
-
             </div>
         </section>
     );

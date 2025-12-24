@@ -1,54 +1,57 @@
-// src/components/ProductCard.jsx
+// src/components/Card.jsx
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import BuyNowButton from './BuyNowButton';
 
-const ProductCard = ({ title, imageSrc }) => {
+const Card = ({ title, imageSrc, productId }) => {
+  const navigate = useNavigate();
+  const BASE_URL = 'http://localhost:8000';
+  const fallbackImage = "https://via.placeholder.com/295x350?text=Samsung+Galaxy";
+
+  const fullImageSrc = imageSrc 
+    ? (imageSrc.startsWith('http') ? imageSrc : `${BASE_URL}${imageSrc}`) 
+    : fallbackImage;
+
   return (
-    // Thẻ cha: w-[300px] và h-[400px] là bắt buộc để định nghĩa kích thước.
-    <div className="group w-[295px] h-[350px] bg-white relative overflow-hidden shadow-xl rounded-lg">
-      
-      {/* 1. Product Image - Tuyệt đối (absolute) để che toàn bộ thẻ */}
-      <img 
-        src={imageSrc} 
-        alt={title} 
-        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-      />
-      
-      {/* 2. Content Container - Đặt trên ảnh (z-10), loại bỏ lớp phủ màu đen */}
-      <div className="absolute inset-0 
-                      text-white /* Giữ màu chữ trắng để nổi bật trên ảnh */
-                      flex flex-col items-center /* CĂN GIỮA NỘI DUNG THEO CHIỀU NGANG */
-                      justify-between 
-                      p-6 z-10">
-          
-          {/* Tiêu đề Sản phẩm - Đã được căn giữa nhờ items-center trên cha */}
-          <h3 className="text-2xl font-bold mt-4 text-center" /* THÊM text-center để chắc chắn */
-              style={{ textShadow: '0 0 5px black' }}> 
-              {title}
-          </h3>
-
-          {/* Phần tử giãn nở để đẩy nút "Buy now" xuống dưới */}
-          <div className="flex-grow"></div> 
-
-          {/* 3. Buy Now Button Container (LỚP TRƯỢT MỚI) */}
-      {/*         - absolute inset-x-0 bottom-0: Neo vào đáy thẻ, chiều rộng full.
-        - transform translate-y-full: Ẩn nút bằng cách đẩy nó xuống 100% chiều cao của nó.
-        - group-hover:translate-y-0: Kéo nút lên khi di chuột vào thẻ cha.
-        - transition-transform duration-300: Hiệu ứng chuyển động mượt mà.
-absolute inset-x-0 bottom-0
-      */}
-      <div className="absolute inset-x-0 bottom-0 h-16
-                      flex items-center justify-center z-20 
-                      transform translate-y-full 
-                      group-hover:-translate-y-2 
-                      transition-transform duration-300 ease-out">
-        <BuyNowButton text="Buy now" /> 
-      </div>
-
+    <div 
+      className="group w-[295px] h-[380px] bg-white relative overflow-hidden shadow-md cursor-pointer border border-gray-100 transition-all duration-500 hover:shadow-xl flex-shrink-0 flex flex-col"
+      onClick={() => productId && navigate(`/product/${productId}`)}
+    >
+      {/* 1. TÊN SẢN PHẨM Ở TRÊN ĐẦU */}
+      <div className="pt-6 px-4 z-10">
+        <h3 className="text-base font-bold text-center text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2 min-h-[3rem]"> 
+          {title}
+        </h3>
       </div>
 
+      {/* 2. KHUNG CHỨA ẢNH Ở GIỮA */}
+      <div className="flex-grow flex items-center justify-center p-6 relative">
+        <img 
+          src={fullImageSrc} 
+          alt={title} 
+          // Cố định chiều cao ảnh để Card trông đều nhau
+          className="max-w-full max-h-[180px] object-contain transition-transform duration-700 group-hover:scale-105" 
+          onError={(e) => {
+            e.target.onerror = null; 
+            e.target.src = fallbackImage;
+          }}
+        />
+      </div>
+      
+      {/* 3. NÚT MUA NGAY Ở DƯỚI CÙNG (Hiện lên khi hover) */}
+      <div className="h-16 flex items-center justify-center pb-4">
+        <div 
+          className="transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 ease-out"
+          onClick={(e) => { 
+            e.stopPropagation(); 
+            productId && navigate(`/product/${productId}`); 
+          }}
+        >
+          <BuyNowButton text="Buy now" /> 
+        </div>
+      </div>
     </div>
   );
 };
 
-export default ProductCard;
+export default Card;

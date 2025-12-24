@@ -62,4 +62,5 @@ interface IProductRepository
         string $sort = 'none',
         ?array $child_slugs = null
     );
+    public function getProductImages(int $product_id): array; 
 }
