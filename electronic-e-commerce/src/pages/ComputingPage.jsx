@@ -210,7 +210,7 @@ const ComputingPage = () => {
 
                                     <div className="flex justify-between items-center mb-6">
                                         <span className="text-2xl font-black text-black">
-                                            ${Number(product.price).toLocaleString()}
+                                            ${Math.floor(Number(product.price)).toLocaleString()}
                                         </span>
                                     </div>
 
